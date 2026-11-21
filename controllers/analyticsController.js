@@ -114,7 +114,7 @@ export const getEventAnalytics = asyncHandler(async (req, res) => {
 
   if (!event) throw new AppError('Event not found.', 404);
 
-  const [stats] = await Registration.aggregate([
+  const rows = await Registration.aggregate([
     { $match: { eventId: event._id } },
     {
       $group: {
@@ -128,15 +128,20 @@ export const getEventAnalytics = asyncHandler(async (req, res) => {
         },
         checkedIn: {
           $sum: {
-            $cond: [{ $ne: ['$checkedInAt', null] }, 1, 0]
+            $cond: [
+              { $eq: [{ $ifNull: ['$checkedInAt', null] }, null] },
+              0,
+              1
+            ]
           }
         }
       }
     }
-  ]).then((items) => [items.reduce((result, item) => {
+  ]);
+  const stats = rows.reduce((result, item) => {
     result[item._id.toLowerCase()] = item;
     return result;
-  }, {})]);
+  }, {});
 
   const confirmed = stats?.confirmed || { registrations: 0, seats: 0, revenue: 0, checkedIn: 0 };
   const cancelled = stats?.cancelled || { registrations: 0, seats: 0, revenue: 0, checkedIn: 0 };
