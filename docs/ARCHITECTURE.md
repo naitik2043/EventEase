@@ -54,6 +54,9 @@ EventEase is a backend-only event management REST API. It uses a layered Express
 7. asyncHandler forwards rejected promises to centralized error handling.
 8. Express returns JSON with consistent status codes and request IDs for errors.
 
+## Health and readiness
+GET /api/health is a liveness check confirming that the HTTP process responds. GET /api/health/ready checks the Mongoose connection state and returns HTTP 200 only when MongoDB is connected; otherwise it returns HTTP 503. Container orchestration should use the readiness endpoint when it needs to know whether the API can serve database-backed requests.
+
 ## Booking and cancellation consistency
 A booking updates Event.availableSeats and creates a Registration inside one MongoDB transaction. The seat decrement is conditional on availableSeats being greater than or equal to the requested quantity. A unique compound index on { userId, eventId } prevents duplicate registrations for the same attendee/event pair.
 
