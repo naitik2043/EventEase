@@ -195,6 +195,7 @@ function renderAdmin() {
       ${metricCard('Total users', metrics.totalUsers, '↗', 'Audience')}
       ${metricCard('Upcoming events', metrics.upcomingEvents, '✳', 'On the calendar')}
       ${metricCard('Confirmed seats', metrics.confirmedSeats, '⌁', 'Reservations')}
+      ${metricCard('Active waitlist', metrics.activeWaitlistRequests, '↗', 'Waiting requests')}
       ${metricCard('Confirmed revenue', money(metrics.grossConfirmedRevenue), '₹', 'Gross booking value')}
     </section>
     <div class="admin-layout">
@@ -288,6 +289,7 @@ function renderModal() {
         ${metricCard('Seats booked', analytics.confirmedSeats, '⌁', 'Reserved')}
         ${metricCard('Occupancy', `${analytics.occupancyRate}%`, '◒', 'Capacity used')}
         ${metricCard('Check-ins', analytics.checkIns, '✓', 'Attendees arrived')}
+        ${metricCard('Waiting list', analytics.waitingListEntries, '↗', 'Queue requests')}
       </div>
       <div class="inline-note">Gross confirmed booking value: <strong>${money(analytics.grossConfirmedRevenue)}</strong>. This is not a payment-settlement report.</div>
       <button class="button button-dark button-full" data-action="close-modal" style="margin-top:16px">Done</button>
