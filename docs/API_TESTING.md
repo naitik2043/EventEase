@@ -36,7 +36,17 @@ Authorization: Bearer <JWT>
 20. Review platform metrics using GET /api/analytics/overview and GET /api/events/:id/analytics.
 21. Test invalid ticket codes, duplicate registrations, insufficient capacity, cancelled-ticket access and cross-user ticket access.
 
-## Automated tests
+## Frontend verification
+
+Run the Vite production build and React compilation:
+
+```bash
+npm run build
+```
+
+For local UI development, start the Express API with `npm run dev` and the Vite server with `npm run dev:web`. Vite proxies same-origin API requests to the Express server.
+
+## Automated API tests
 
 Unit and integration suite:
 
@@ -52,7 +62,7 @@ MongoDB-backed integration tests require a dedicated database whose name include
 MONGO_TEST_URI="mongodb://127.0.0.1:27017/eventease_test?replicaSet=rs0" npm test
 ```
 
-The GitHub Actions workflow starts a disposable MongoDB replica set and runs the tests on Node.js 22, 24 and 26.
+The GitHub Actions workflow starts a disposable MongoDB replica set, builds the React/Vite frontend, validates Docker configuration and builds the production image. The matrix runs on Node.js 22 and 24.
 
 ## Important additional test scenarios
 

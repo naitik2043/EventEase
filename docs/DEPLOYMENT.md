@@ -20,11 +20,11 @@ The included MongoDB single-node replica set is for development and testing only
 
 ## Vercel Git deployment
 
-The root vercel.json deploys the static client directory and the Express catch-all serverless function at api/[...slug].js. The frontend uses same-origin /api requests, so a separate API hostname is not required.
+The root vercel.json builds the React application with Vite into frontend/dist and deploys that output together with the Express catch-all serverless function at api/[...slug].js. The frontend uses same-origin /api requests, so a separate API hostname is not required.
 
 1. Import the GitHub repository in Vercel.
 2. Keep the project Root Directory at the repository root.
-3. Use the repository's default Build Command and Output Directory from vercel.json.
+3. Use the repository's default Build Command and Output Directory from vercel.json (npm run build / frontend/dist).
 4. Add the required Production and Preview environment variables in Vercel Project Settings.
 5. Connect a managed MongoDB replica set (for example, MongoDB Atlas).
 6. Deploy the main branch and verify /, /api/health, /docs.html, login and a test booking.

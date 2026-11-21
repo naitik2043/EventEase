@@ -2,7 +2,7 @@
 
 ## Product overview
 
-EventEase is a full-stack event management platform. The frontend is a responsive static web client; the backend is a layered Express REST API backed by MongoDB.
+EventEase is a full-stack event management platform. The frontend is a component-based React application built with Vite; the backend is a layered Express REST API backed by MongoDB.
 
 ```text
              Browser / Responsive UI
@@ -32,7 +32,9 @@ EventEase is a full-stack event management platform. The frontend is a responsiv
 
 | Path | Responsibility |
 |---|---|
-| client/ | Responsive attendee and Admin dashboards, API client, and Swagger UI |
+| frontend/src/ | React attendee and Admin dashboards, API client, reusable UI components |
+| frontend/public/ | Static Swagger UI assets and OpenAPI contract |
+| frontend/vite.config.js | Vite development proxy and production build configuration |
 | api/[...slug].js | Serverless adapter for the Express application |
 | app.js | Configures Express middleware, docs, health check and route mounts |
 | server.js | Local Node.js entry point, production config validation and graceful shutdown |
@@ -89,4 +91,4 @@ Booking, cancellation, and event deletion use multi-document transactions. The d
 
 ## API and frontend documentation
 
-The OpenAPI 3.0.3 contract is stored in docs/openapi.json and copied to client/openapi.json for static Swagger UI. Locally, API docs are available at /api-docs; on the static frontend, open /docs.html.
+The OpenAPI 3.0.3 contract is stored in docs/openapi.json and copied to frontend/public/openapi.json for the static Swagger UI page. Locally, API docs are available at /api-docs; on the static frontend, open /docs.html.

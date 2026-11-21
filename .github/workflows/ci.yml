@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [22, 24, 26]
+        node-version: [22, 24]
 
     env:
       MONGO_TEST_URI: mongodb://localhost:27017/eventease_test?replicaSet=rs0
@@ -57,7 +57,7 @@ jobs:
           docker logs eventease-ci-mongodb
           exit 1
 
-      - name: Validate application syntax
+      - name: Install frontend dependencies and build React application
         run: npm run build
 
       - name: Validate Docker Compose configuration

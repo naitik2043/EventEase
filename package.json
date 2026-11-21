@@ -2,7 +2,7 @@
   "name": "eventease-backend",
   "version": "1.2.0",
   "private": true,
-  "description": "Full-stack event management platform with transactional Node.js and Express APIs, MongoDB, QR tickets, FIFO waitlists, and admin analytics",
+  "description": "Full-stack React and Express event management platform with transactional bookings, FIFO waitlists, QR tickets and analytics",
   "type": "module",
   "main": "server.js",
   "license": "MIT",
@@ -13,10 +13,14 @@
     "test": "node --test",
     "test:unit": "node --test test/AppError.test.js test/asyncHandler.test.js",
     "test:integration": "node --test test/api.integration.test.js",
-    "build": "node --check \"api/[...slug].js\" && node --check client/app.js && node --check client/api.js && node --check client/docs-initializer.js"
+    "build": "node --check \"api/[...slug].js\" && npm run install:web && npm run build:web",
+    "install:web": "npm install --prefix frontend --no-package-lock --no-audit --no-fund",
+    "build:web": "npm run build --prefix frontend",
+    "dev:web": "npm run dev --prefix frontend",
+    "preview:web": "npm run preview --prefix frontend"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0 <25"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -47,7 +51,11 @@
     "transactions",
     "qr-tickets",
     "waitlist",
-    "backend"
+    "backend",
+    "react",
+    "vite",
+    "frontend",
+    "dashboard"
   ],
   "repository": {
     "type": "git",

@@ -1,15 +1,19 @@
-const API_BASE = (import.meta?.env?.VITE_API_URL || '').replace(/\/$/, '');
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
-function token() {
+function currentToken() {
   return sessionStorage.getItem('eventease_token') || '';
 }
 
 export async function api(path, options = {}) {
   const headers = new Headers(options.headers || {});
+
   if (options.body && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
-  if (token()) headers.set('Authorization', `Bearer ${token()}`);
+
+  if (currentToken()) {
+    headers.set('Authorization', `Bearer ${currentToken()}`);
+  }
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -47,7 +51,7 @@ export function clearSession() {
 export function getSession() {
   try {
     return {
-      token: token(),
+      token: currentToken(),
       user: JSON.parse(sessionStorage.getItem('eventease_user') || 'null')
     };
   } catch {

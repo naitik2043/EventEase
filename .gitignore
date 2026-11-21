@@ -22,3 +22,8 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Frontend build output and nested package install
+frontend/node_modules/
+frontend/dist/
+dist/
