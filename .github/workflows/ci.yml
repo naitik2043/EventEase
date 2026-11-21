@@ -57,8 +57,10 @@ jobs:
           docker logs eventease-ci-mongodb
           exit 1
 
-      - name: Install frontend dependencies and build React application
+      - name: Build React application with production environment
         run: npm run build
+        env:
+          NODE_ENV: production
 
       - name: Validate Docker Compose configuration
         run: |
