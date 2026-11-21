@@ -14,10 +14,11 @@ Authorization: Bearer <JWT>
 
 ## Manual API verification flow
 1. Start EventEase with a MongoDB replica set and seed an Admin.
-2. Verify GET /api/health returns HTTP 200.
-3. Register a normal user using POST /api/auth/register.
-4. Log in as Admin and User through POST /api/auth/login.
-5. Create an upcoming event with the Admin token.
+2. Verify GET /api/health returns HTTP 200 (liveness).
+3. Verify GET /api/health/ready returns HTTP 200 while MongoDB is connected; it should return HTTP 503 if the database becomes unavailable.
+4. Register a normal user using POST /api/auth/register.
+5. Log in as Admin and User through POST /api/auth/login.
+6. Create an upcoming event with the Admin token.
 6. Confirm a normal User receives 403 when creating, updating or deleting events.
 7. Browse and filter events through GET /api/events.
 8. Book seats using POST /api/registrations.
