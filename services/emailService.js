@@ -18,7 +18,8 @@ async function sendEmail({ to, subject, text }) {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ from, to: [to], subject, text })
+      body: JSON.stringify({ from, to: [to], subject, text }),
+      signal: AbortSignal.timeout(7000)
     });
 
     if (!response.ok) {
