@@ -332,6 +332,7 @@ The current unit tests cover the shared `AppError` and `asyncHandler` utilities 
 
 - This repository contains the **backend API**; a separate frontend application is not included.
 - Booking creation and seat reservation use a unique registration index, an atomic conditional seat update, and compensating cleanup. They are **not implemented as a multi-document MongoDB transaction**.
+- Event deletion currently checks for confirmed registrations and then deletes in separate operations. A registration request can theoretically race with that check; use a transaction or event lifecycle lock before production deployment.
 - The Postman collection is a starter workflow and should be run against your own local database.
 - Potential next steps: broader automated integration tests (especially booking concurrency and cancellation), structured logging, monitoring, OpenAPI documentation, and a frontend client.
 
