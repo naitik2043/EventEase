@@ -43,7 +43,7 @@ const configuredOrigins = process.env.CORS_ORIGIN
   .filter(Boolean);
 
 app.use(cors({
-  origin: configuredOrigins?.length ? configuredOrigins : true
+  origin: configuredOrigins?.length ? configuredOrigins : false
 }));
 
 app.use(express.json({ limit: '10kb' }));
