@@ -3,6 +3,10 @@ import { log } from '../utils/logger.js';
 
 let connectionPromise;
 
+mongoose.connection.on('disconnected', () => {
+  connectionPromise = undefined;
+});
+
 export async function connectDB() {
   if (mongoose.connection.readyState === 1) {
     return mongoose.connection;
