@@ -163,6 +163,8 @@ Copy-Item .env.example .env
 
 3. Update `.env` with a unique JWT secret and local Admin seed credentials. Docker Compose provisions a one-node MongoDB replica set for development.
 
+MongoDB is published to `127.0.0.1:27017` only, so it is not exposed to other network interfaces. The API container uses the Docker image health check against the database readiness endpoint.
+
 4. Start the API and database:
 
 ```bash
