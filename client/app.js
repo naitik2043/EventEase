@@ -4,6 +4,7 @@ const state = {
   ...getSession(),
   tab: 'events',
   events: [],
+  apiUnavailable: '',
   registrations: [],
   waitlist: [],
   analytics: null,
@@ -115,6 +116,7 @@ function renderEvents() {
       </div>
     </section>
 
+    ${state.apiUnavailable ? `<section class="api-notice" role="status"><span class="api-notice-icon">i</span><div><strong>Frontend is live — backend setup is pending</strong><p>${escapeHtml(state.apiUnavailable)}</p></div></section>` : ''}
     <section class="section-heading">
       <div><div class="eyebrow">THE LINEUP</div><h2>Explore events</h2><p class="muted">A little inspiration for your calendar.</p></div>
       <div class="event-count"><strong>${filtered.length.toString().padStart(2, '0')}</strong><span>events found</span></div>
@@ -303,8 +305,15 @@ function renderModal() {
 }
 
 async function loadEvents() {
-  const response = await api('/api/events?limit=100');
-  state.events = response.events || [];
+  try {
+    const response = await api('/api/events?limit=100');
+    state.events = response.events || [];
+    state.apiUnavailable = '';
+  } catch (error) {
+    if (error.status !== 503) throw error;
+    state.events = [];
+    state.apiUnavailable = 'The production API is waiting for a MongoDB replica-set connection. Configure MONGO_URI in Vercel Project Settings to enable live events, sign-in, bookings and Admin operations.';
+  }
 }
 
 async function loadRegistrations() {
