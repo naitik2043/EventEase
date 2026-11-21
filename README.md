@@ -1,10 +1,10 @@
 # EventEase
 
-### Event Management & Registration REST API
+### Full-Stack Event Management & Registration Platform
 
-A modular, role-based REST API for event discovery, administration, and seat-aware attendee registration, built with **Node.js, Express.js, MongoDB, and Mongoose**.
+EventEase is a role-based event management platform for discovering events, reserving seats, managing attendee registrations, issuing QR tickets, and checking attendees in at the venue.
 
-EventEase demonstrates layered backend architecture, JWT authentication, role-based authorization, transactional booking workflows, request validation, operational safeguards, interactive API documentation, automated testing, and containerized local development.
+The project combines a responsive browser dashboard with a modular **Node.js, Express.js, MongoDB and Mongoose** API. It focuses on real backend engineering concerns such as transactional seat reservations, FIFO waitlist promotion, JWT authorization, API validation, automated tests, deployment configuration and operational visibility.
 
 <p align="center">
   <a href="https://github.com/naitik2043/EventEase/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/naitik2043/EventEase/actions/workflows/ci.yml/badge.svg"></a>
@@ -18,170 +18,176 @@ EventEase demonstrates layered backend architecture, JWT authentication, role-ba
 
 ---
 
-## Project at a glance
+## Product overview
 
-| Area | Details |
+EventEase supports two roles:
+
+| Role | Capabilities |
 |---|---|
-| Application | Event management and attendee registration API |
-| Architecture | Layered Express application |
-| Runtime | Node.js 22+ (supported LTS releases) |
-| API framework | Express.js 4 |
-| Database | MongoDB replica set |
-| Data modeling | Mongoose |
-| Authentication | JWT |
-| Password hashing | bcryptjs |
-| Validation | express-validator |
-| API specification | OpenAPI 3.0.3 / Swagger UI |
-| Testing | Node.js Test Runner and MongoDB-backed HTTP integration tests |
-| Local infrastructure | Docker Compose |
-| CI | GitHub Actions |
+| Attendee | Discover events, filter/search, book seats, view bookings, access QR tickets, cancel a booking, join/view a waitlist |
+| Admin | Create/update/delete events, review attendees, view platform/event analytics, inspect waitlists, validate tickets and check attendees in |
 
-## Core capabilities
+### Attendee experience
 
-### Authentication and access control
-- User registration and login.
-- Password hashing with bcryptjs.
-- JWT-based authentication for protected routes.
-- Separate User and Admin permissions.
-- Public registration always assigns the normal User role.
-- Admin account provisioning through a controlled seed script.
+- Responsive event catalogue with search and category filters.
+- Authenticated registration with server-calculated booking amounts.
+- Personal bookings and ticket details.
+- QR ticket payload with an opaque, cryptographically random ticket code.
+- Booking cancellation with automatic waitlist promotion.
+- Personal waitlist activity and promotion status.
 
-### Event management
-- Admin-only event creation, editing, and deletion.
-- Public upcoming-event discovery.
-- Search by event name and description.
-- Category filtering, date sorting, and pagination.
-- Server-managed event capacity and creator assignment.
-- Deletion protection for events with confirmed registrations.
+### Admin experience
 
-### Registration and seat management
-- Authenticated event registration.
-- Duplicate user/event registration protection.
-- Seat availability validation.
-- Conditional seat reservation to prevent overbooking.
-- Transactional registration and seat decrement.
-- Transactional cancellation and seat restoration.
-- Server-side registration fee calculation.
-- User-owned registration listing.
+- Event creation and event operations.
+- Attendee and waitlist queue visibility by event.
+- Single-use ticket check-in with duplicate-scan protection.
+- Platform overview metrics, top events and recent registration activity.
+- Event-level occupancy, booking, revenue and check-in metrics.
 
-### API and operational safeguards
-- Request validation at route boundaries.
-- Centralized JSON error responses.
-- HTTP security headers through Helmet.
-- Configurable CORS allowlist.
-- Request-size limits and MongoDB query sanitization.
-- General API and stricter authentication rate limits.
-- Request IDs and structured JSON request logs.
-- Production-safe internal error responses.
-- Graceful shutdown on SIGINT/SIGTERM.
+## Engineering highlights
+
+### Transactional booking and cancellation
+
+Booking inserts a Registration and decrements Event.availableSeats inside one MongoDB transaction. The conditional capacity update prevents the seat count from becoming negative when requests race. A unique compound index prevents duplicate registrations for the same user/event.
+
+Cancellation marks the registration as cancelled and restores seats in a transaction. The historical registration is retained so that one attendee cannot register repeatedly for the same event.
+
+### FIFO waitlist promotion
+
+When a registration is cancelled, EventEase checks the oldest waiting request. Eligible entries are promoted in queue order, with the new Registration and seat reservation committed in the same transaction. A larger first-in-line party is not skipped just because a later smaller party would fit.
+
+### QR tickets and check-in
+
+Every new confirmed booking receives a random ticket code. The attendee can retrieve a QR payload from the ticket endpoint. An authenticated Admin validates the opaque code and records checkedInAt/checkedInBy. Cancelled tickets and repeated check-in attempts are rejected.
+
+The QR image is rendered using an external QR image endpoint. Only the opaque ticket code is sent to that service; attendee name and email are not encoded in the QR data.
+
+### Email notifications
+
+Booking confirmations and waitlist promotion notifications can be sent through Resend. Email delivery is optional and best-effort; a provider outage does not roll back a confirmed database booking.
+
+### Security and operations
+
+- JWT authentication and server-side User/Admin authorization.
+- bcryptjs password hashing.
+- Request validation through express-validator.
+- Helmet, configurable CORS, rate limiting and MongoDB query sanitization.
+- Request IDs and structured JSON logs.
+- Production startup checks for JWT secret and CORS configuration.
+- Graceful shutdown for local Node.js execution.
+- CodeQL, Dependabot and GitHub Actions CI.
+
+## Technology stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Frontend | HTML, CSS, modern JavaScript modules | Responsive attendee and Admin dashboard |
+| Backend | Node.js, Express.js | REST API and business logic |
+| Database | MongoDB replica set | Persistent data and multi-document transactions |
+| ODM | Mongoose | Schemas, indexes, queries and sessions |
+| Authentication | JSON Web Token | Protected API access |
+| Password security | bcryptjs | Password hashing |
+| Validation | express-validator | Request validation |
+| Security | Helmet, CORS, express-rate-limit, express-mongo-sanitize | HTTP and API safeguards |
+| Email | Resend REST API | Booking and waitlist notifications |
+| API documentation | OpenAPI 3.0.3, Swagger UI | Interactive API exploration |
+| Testing | Node.js Test Runner, native fetch | Unit and HTTP integration tests |
+| Infrastructure | Docker, Docker Compose | Repeatable local environment |
+| CI / Security | GitHub Actions, CodeQL, Dependabot | Automated quality and security workflows |
+| Hosting configuration | Vercel | Static frontend and serverless Express adapter |
 
 ## Architecture
 
 ```text
-                 API CLIENT
-              Postman / Swagger
-                      |
-                      v
-                  Express
-                      |
-       Request ID + HTTP Request Logging
-                      |
-       Helmet / CORS / Parsing / Sanitization
-                      |
-                 API Routers
-                      |
-        Validation / JWT Authentication
-                      |
-             Role Authorization
-                      |
+                EVENTEASE WEB CLIENT
+             Events · Bookings · Admin
+                       |
+                 Same-origin API
+                       |
+               Vercel Serverless
+              api/[...slug].js
+                       |
+                   Express
+                       |
+       Middleware · Validation · JWT · RBAC
+                       |
                  Controllers
-                      |
-             Mongoose + Sessions
-                      |
-             MongoDB Replica Set
+                       |
+               Mongoose Models
+                       |
+                MongoDB Replica Set
+              /        |         \
+           Users     Events   Registrations
+                                  |
+                               Waitlist
 ```
 
-The codebase separates HTTP setup, routes, controllers, models, middleware, configuration, utilities, scripts, and documentation. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for module responsibilities and the request lifecycle.
+For a detailed module and request-flow explanation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Project structure
+## Repository structure
 
 ```text
 EventEase/
-├── app.js
-├── server.js
+├── api/
+│   └── [...slug].js
+├── client/
+│   ├── app.js
+│   ├── api.js
+│   ├── index.html
+│   ├── styles.css
+│   ├── docs.html
+│   ├── docs-initializer.js
+│   └── openapi.json
 ├── config/
 │   └── db.js
 ├── controllers/
+│   ├── analyticsController.js
 │   ├── authController.js
 │   ├── eventController.js
 │   └── registrationController.js
-├── Result/
-│   ├── GET HEALT.png
-│   ├── MONGODB.png
-│   ├── POST-Admin_Create_Event.png
-│   ├── POST-USer login .png
-│   └── User-register.png
 ├── docs/
-│   ├── ARCHITECTURE.md
 │   ├── API_TESTING.md
+│   ├── ARCHITECTURE.md
 │   ├── DEPLOYMENT.md
-│   ├── openapi.json
-│   ├── swagger-initializer.js
-│   └── EventEase.postman_collection.json
-├── docker/
-│   └── mongo-init.js
-├── middleware/
-│   ├── adminMiddleware.js
-│   ├── authMiddleware.js
-│   ├── errorMiddleware.js
-│   ├── requestLogger.js
-│   └── validateRequest.js
+│   ├── EventEase.postman_collection.json
+│   └── openapi.json
 ├── models/
 │   ├── Event.js
 │   ├── Registration.js
-│   └── User.js
+│   ├── User.js
+│   └── Waitlist.js
 ├── routes/
+│   ├── analyticsRoutes.js
 │   ├── authRoutes.js
 │   ├── eventRoutes.js
 │   └── registrationRoutes.js
+├── services/
+│   └── emailService.js
 ├── scripts/
 │   └── seedAdmin.js
 ├── test/
-│   ├── AppError.test.js
-│   ├── api.integration.test.js
-│   └── asyncHandler.test.js
 ├── utils/
-│   ├── AppError.js
-│   ├── asyncHandler.js
-│   └── logger.js
 ├── .github/
 │   ├── dependabot.yml
-│   ├── pull_request_template.md
 │   └── workflows/
-│       ├── ci.yml
-│       └── codeql.yml
-├── .dockerignore
-├── .env.example
 ├── Dockerfile
 ├── docker-compose.yml
-├── LICENSE
-├── SECURITY.md
+├── vercel.json
+├── app.js
+├── server.js
 ├── package.json
-└── README.md
+└── LICENSE
 ```
 
-## Quick start
+## Quick start — Docker (recommended)
 
 ### Prerequisites
 
-- Node.js 22 or a later supported LTS release.
-- npm.
-- Docker Desktop with Docker Compose, or a MongoDB replica set.
-- Postman or a browser for API verification.
+- Docker Desktop with Docker Compose.
+- Node.js 22+ and npm for local test commands.
+- A browser or Postman.
 
-> **Important:** EventEase uses MongoDB transactions for booking and cancellation. A standalone MongoDB server does not support these transactions. Use the included Docker Compose replica set or a compatible managed MongoDB replica set.
-
-### Option A — Run with Docker Compose
+MongoDB transactions require a replica set. The included Compose stack starts MongoDB as a single-node replica set for development.
 
 1. Clone the repository:
 
@@ -190,7 +196,7 @@ git clone https://github.com/naitik2043/EventEase.git
 cd EventEase
 ```
 
-2. Create your local environment file:
+2. Create the environment file:
 
 ```bash
 cp .env.example .env
@@ -202,91 +208,78 @@ On Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
-3. Edit .env. Set a strong JWT_SECRET, Admin name, email, and password. Docker Compose supplies the internal MongoDB replica-set URI to the API container.
+3. Edit .env. Use a unique random JWT secret and set the Admin seed name, email and password. Email provider variables are optional.
 
-4. Start the API and database:
+4. Start the application:
 
 ```bash
 docker compose up --build
 ```
 
-5. In a second terminal, create the Admin account:
+5. In a second terminal, seed the Admin account:
 
 ```bash
 docker compose exec api npm run seed:admin
 ```
 
-The API is available at:
+Open:
 
+- Web application: http://localhost:5000
 - API health: http://localhost:5000/api/health
-- Interactive documentation: http://localhost:5000/api-docs
+- Swagger UI: http://localhost:5000/api-docs
 - OpenAPI JSON: http://localhost:5000/api-docs/openapi.json
 
-Stop the stack with `docker compose down`. To delete the local database volume as well, use `docker compose down -v` (this permanently deletes local MongoDB data).
+Stop the stack with `docker compose down`. To also remove the local database volume, use `docker compose down -v` (destructive).
 
-### Option B — Run locally
+## Run locally without Docker
 
-1. Start a MongoDB replica set and create a database.
-2. Clone the repository and install dependencies:
+1. Start MongoDB as a replica set.
+2. Install root dependencies:
 
 ```bash
-git clone https://github.com/naitik2043/EventEase.git
-cd EventEase
 npm ci
 ```
 
-3. Create and configure .env:
-
-```bash
-cp .env.example .env
-```
-
-Set MONGO_URI to your replica-set connection string. A typical local URI is:
+3. Create .env from .env.example and set MONGO_URI to a replica-set connection string, for example:
 
 ```text
 mongodb://127.0.0.1:27017/eventease?replicaSet=rs0
 ```
 
-4. Seed the Admin account:
+4. Seed the Admin and start the API:
 
 ```bash
 npm run seed:admin
-```
-
-5. Start the development server:
-
-```bash
 npm run dev
 ```
 
-For a standard start:
-
-```bash
-npm start
-```
+The Express server serves the API and docs. For the static browser UI, serve the client directory from a local static server or use the included Docker Compose environment.
 
 ## Environment variables
 
-| Variable | Required | Description |
+| Variable | Required | Purpose |
 |---|---|---|
-| PORT | No | HTTP port; defaults to 5000 |
-| NODE_ENV | Production | Runtime environment |
+| PORT | No | API port; defaults to 5000 |
+| NODE_ENV | Production | Runtime mode |
 | MONGO_URI | Yes | MongoDB replica-set connection URI |
-| MONGO_TEST_URI | Integration tests | Isolated test database URI; database name must include test |
-| JWT_SECRET | Yes | Long, random JWT signing secret |
-| JWT_EXPIRES_IN | No | JWT lifetime; defaults to 1d |
-| CORS_ORIGIN | Production | Comma-separated trusted frontend origins |
+| MONGO_TEST_URI | Integration tests | Dedicated test DB; database name must contain test |
+| JWT_SECRET | Yes | Unique, random signing secret (32+ characters) |
+| JWT_EXPIRES_IN | No | Token lifetime; defaults to 1d |
+| CORS_ORIGIN | Production | Comma-separated trusted origins |
+| APP_BASE_URL | Recommended | Base URL included in notification emails |
+| RESEND_API_KEY | Optional | Resend email API key |
+| MAIL_FROM | Optional | Verified Resend sender address |
 | ADMIN_NAME | Admin seed | Admin display name |
-| ADMIN_EMAIL | Admin seed | Admin account email |
-| ADMIN_PASSWORD | Admin seed | Strong Admin password |
+| ADMIN_EMAIL | Admin seed | Admin email |
+| ADMIN_PASSWORD | Admin seed | Admin seed password |
 
-Never commit .env, database credentials, JWT secrets, access tokens, or production configuration. The seed script updates the configured Admin account when the email already exists, including resetting its password to the configured value.
+Never commit .env, production credentials, tokens, or database connection strings. Public registration always creates a normal User; Admin accounts must be provisioned through the seed script.
 
-## API reference
+## REST API reference
 
-**Base URL:** http://localhost:5000
+Base URL: http://localhost:5000
 
-Protected routes require:
+Protected endpoints require:
 
 ```http
 Authorization: Bearer <JWT>
@@ -296,96 +289,94 @@ Authorization: Bearer <JWT>
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| POST | /api/auth/register | Public | Create a normal User account |
-| POST | /api/auth/login | Public | Authenticate and receive a JWT |
+| POST | /api/auth/register | Public | Register a normal user |
+| POST | /api/auth/login | Public | Login and receive a JWT |
 
 ### Events
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| GET | /api/events | Public | List upcoming events |
-| GET | /api/events/:id | Public | Get event details |
-| POST | /api/events | Admin | Create an event |
-| PUT | /api/events/:id | Admin | Update an event |
-| DELETE | /api/events/:id | Admin | Delete an event if no confirmed registrations exist |
+| GET | /api/events | Public | Search/filter/paginate upcoming events |
+| GET | /api/events/:id | Public | Event details |
+| POST | /api/events | Admin | Create event |
+| PUT | /api/events/:id | Admin | Update event |
+| DELETE | /api/events/:id | Admin | Delete event without confirmed registrations |
+| GET | /api/events/:id/analytics | Admin | Event-level performance metrics |
 
-Example event search:
-
-```http
-GET /api/events?search=workshop&category=Technology&page=1&limit=10
-```
-
-### Registrations
+### Registrations and tickets
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| POST | /api/registrations | Authenticated | Book event seats |
-| GET | /api/registrations/my | Authenticated | List the current user's registrations |
-| GET | /api/registrations/event/:eventId | Admin | List registrations for an event |
-| PATCH | /api/registrations/:id/cancel | Registration owner | Cancel a registration |
+| POST | /api/registrations | User | Reserve seats |
+| GET | /api/registrations/my | User | View own bookings |
+| PATCH | /api/registrations/:id/cancel | Owner | Cancel booking and release seats |
+| GET | /api/registrations/:id/ticket | Owner / Admin | Retrieve QR ticket payload |
+| POST | /api/registrations/check-in | Admin | Verify ticket and check attendee in |
+| GET | /api/registrations/event/:eventId | Admin | View event attendees |
 
-### Interactive API documentation
+### Waitlist and analytics
 
-Swagger UI is served at /api-docs. The versioned API contract is maintained in [docs/openapi.json](docs/openapi.json).
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| POST | /api/registrations/waitlist | User | Join FIFO waitlist |
+| GET | /api/registrations/waitlist/my | User | View own waitlist requests |
+| GET | /api/registrations/event/:eventId/waitlist | Admin | View event waitlist queue |
+| GET | /api/analytics/overview | Admin | Platform-wide metrics |
 
-### API verification evidence
+### API documentation
 
-The repository also retains example screenshots from the original manual API verification workflow:
+- Local Express Swagger UI: /api-docs
+- Static web Swagger UI: /docs.html
+- OpenAPI contract: [docs/openapi.json](docs/openapi.json)
 
-- [API health check](Result/GET%20HEALT.png)
-- [MongoDB connection](Result/MONGODB.png)
-- [Admin event creation](Result/POST-Admin_Create_Event.png)
-- [User login](Result/POST-USer%20login%20.png)
-- [User registration](Result/User-register.png)
+## Testing
 
-## Data model
-
-- **User:** name, email, password hash, role.
-- **Event:** event details, date, venue, seat capacity, fee, creator reference.
-- **Registration:** user reference, event reference, seat count, total amount, registration status and date.
-
-A unique compound index on { userId, eventId } prevents duplicate registration records for the same user/event pair.
-
-## Testing and CI
-
-Run unit tests:
+Run syntax checks and the unit/integration test suite:
 
 ```bash
-npm run test:unit
+npm ci
+npm run build
+npm test
 ```
 
-Run the full suite with an isolated MongoDB replica set:
+For local integration tests, set MONGO_TEST_URI to an isolated replica-set database whose name contains test.
 
 ```bash
 MONGO_TEST_URI="mongodb://127.0.0.1:27017/eventease_test?replicaSet=rs0" npm test
 ```
 
-The integration suite exercises real HTTP requests against MongoDB and covers authentication, role enforcement, event creation and discovery, successful and rejected bookings, duplicate prevention, cancellation, seat restoration, insufficient capacity, and deletion protection.
+The GitHub Actions workflow provisions a disposable MongoDB replica set and tests on Node.js 22, 24 and 26. The suite covers authentication, role enforcement, event creation, booking, duplicate protection, cancellation and seat restoration, insufficient capacity, concurrent bookings, waitlist promotion, ticket check-in and analytics.
 
-GitHub Actions runs the suite against Node.js 22, 24, and 26 with a disposable MongoDB replica set. See [docs/API_TESTING.md](docs/API_TESTING.md) for the test workflow.
+See [docs/API_TESTING.md](docs/API_TESTING.md) for manual verification and additional production test cases.
 
 ## Deployment
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production configuration, managed MongoDB requirements, Docker deployment, secret handling, and operational considerations.
+The root vercel.json configures the static browser client and the serverless Express API adapter. To enable a working live environment:
 
-The repository includes a Dockerfile and Docker Compose setup for repeatable local execution. No public production deployment URL is currently configured.
+1. Import this repository into Vercel, keeping the root directory as the repository root.
+2. Configure MONGO_URI, JWT_SECRET, NODE_ENV=production, and CORS_ORIGIN in Vercel Project Settings.
+3. Connect a managed MongoDB replica set.
+4. Optionally configure RESEND_API_KEY, MAIL_FROM, and APP_BASE_URL.
+5. Seed the initial Admin from a trusted environment connected to the intended database.
+6. Deploy and verify /, /api/health, /docs.html, authentication and a test booking.
 
-## Engineering notes and current scope
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for environment setup and production operations. A Vercel Git project may build the frontend before production environment variables are configured; API routes will not be operational until those secrets and database access are provided.
 
-- Booking, cancellation, and event deletion use MongoDB transactions. Deploy to a replica set or supported sharded cluster.
-- The included Docker Compose replica set is intended for local development and testing, not high availability.
-- Integration tests require an isolated test database. They are skipped by the default test runner when MONGO_TEST_URI is not configured.
-- The repository contains the backend API and API documentation; a separate React frontend is not included.
-- Payment processing, QR ticket issuance/check-in, email delivery, waitlists, and event analytics are not part of the current implementation.
-- Before production launch, perform load testing, security review, backup/restore verification, and provider-specific monitoring setup.
+## Scope and operational notes
+
+- The local Docker MongoDB node is for development, not high availability.
+- Email is optional and uses Resend when configured.
+- The QR image is generated by a third-party QR service from an opaque random ticket code; attendee personal details are not encoded.
+- Payment capture/settlement is not implemented. Analytics revenue represents confirmed booking value, not collected payments.
+- Before production launch, conduct an independent security review, load/concurrency testing, backup/restore validation and provider-specific monitoring setup.
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE).
+Distributed under the MIT License. See [LICENSE](LICENSE).
 
 ## Author
 
 **Naitik Gupta**
 
 - GitHub: [@naitik2043](https://github.com/naitik2043)
-- Repository: [EventEase](https://github.com/naitik2043/EventEase)
+- Project: [EventEase](https://github.com/naitik2043/EventEase)
