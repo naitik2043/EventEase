@@ -7,6 +7,8 @@ EventEase is a backend service for event discovery, attendee registration, seat 
 This repository intentionally contains the API and its supporting backend infrastructure only. It does not include a React application, browser dashboard, static website, or frontend deployment.
 
 <p align="center">
+  <a href="https://github.com/naitik2043/EventEase/actions/workflows/ci.yml"><img alt="EventEase CI" src="https://github.com/naitik2043/EventEase/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/naitik2043/EventEase/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/naitik2043/EventEase/actions/workflows/codeql.yml/badge.svg"></a>
   <img alt="Node.js" src="https://img.shields.io/badge/Node.js-22%20%7C%2024-339933?logo=nodedotjs&logoColor=white">
   <img alt="Express" src="https://img.shields.io/badge/Express-4.x-000000?logo=express&logoColor=white">
   <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-Replica%20Set-47A248?logo=mongodb&logoColor=white">
