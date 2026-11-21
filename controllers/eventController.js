@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Event from '../models/Event.js';
 import Registration from '../models/Registration.js';
+import Waitlist from '../models/Waitlist.js';
 import AppError from '../utils/AppError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
@@ -138,6 +139,7 @@ export const deleteEvent = asyncHandler(async (req, res) => {
       }
 
       await Registration.deleteMany({ eventId: event._id }, { session });
+      await Waitlist.deleteMany({ eventId: event._id }, { session });
       await Event.deleteOne({ _id: event._id }, { session });
     });
 
