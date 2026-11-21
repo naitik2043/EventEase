@@ -310,6 +310,21 @@ integrationTest(
       assert.equal(queueEntry.status, 201);
       assert.equal(queueEntry.body.waitlistEntry.status, 'Waiting');
 
+      const leaveQueue = await request(
+        `/api/registrations/waitlist/${queueEntry.body.waitlistEntry._id}`,
+        { method: 'DELETE', token: secondToken }
+      );
+      assert.equal(leaveQueue.status, 200);
+      assert.equal(leaveQueue.body.waitlistEntry.status, 'Cancelled');
+
+      const rejoinQueue = await request('/api/registrations/waitlist', {
+        method: 'POST',
+        token: secondToken,
+        body: { eventId: waitlistEventId, numberOfSeats: 1 }
+      });
+      assert.equal(rejoinQueue.status, 201);
+      assert.equal(rejoinQueue.body.waitlistEntry.status, 'Waiting');
+
       const cancellation = await request(
         `/api/registrations/${firstRegistrationId}/cancel`,
         { method: 'PATCH', token: userToken }
