@@ -312,8 +312,10 @@ export const joinWaitlist = asyncHandler(async (req, res) => {
   if (existing?.status === 'Waiting') {
     throw new AppError('You are already on this event waitlist.', 409);
   }
-  if (existing) {
-    throw new AppError('A waitlist request already exists for this event.', 409);
+  // A previous Cancelled entry is retained as history; the partial unique index
+  // permits a fresh queue position while keeping one active Waiting entry.
+  if (existing?.status === 'Promoted') {
+    throw new AppError('Your waitlist request has already been promoted.', 409);
   }
 
   try {
