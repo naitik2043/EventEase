@@ -11,6 +11,7 @@ import {
   joinWaitlist,
   getMyWaitlist,
   getEventWaitlist,
+  cancelWaitlistEntry,
   getRegistrationTicket,
   verifyTicket
 } from '../controllers/registrationController.js';
@@ -31,6 +32,13 @@ router.post('/waitlist', [
   body('numberOfSeats').isInt({ min: 1, max: 20 }).toInt()
     .withMessage('numberOfSeats must be between 1 and 20.')
 ], validateRequest, joinWaitlist);
+
+router.delete(
+  '/waitlist/:id',
+  param('id').isMongoId().withMessage('Invalid waitlist entry ID.'),
+  validateRequest,
+  cancelWaitlistEntry
+);
 
 router.post('/check-in', restrictToAdmin, [
   body('ticketCode').isString().trim().isLength({ min: 32, max: 64 })
