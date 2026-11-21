@@ -14,7 +14,7 @@
     "test:unit": "node --test test/AppError.test.js test/asyncHandler.test.js",
     "test:integration": "node --test test/api.integration.test.js",
     "build": "node --check \"api/[...slug].js\" && npm run install:web && npm run build:web",
-    "install:web": "npm install --prefix frontend --no-package-lock --no-audit --no-fund",
+    "install:web": "npm install --prefix frontend --no-package-lock --no-audit --no-fund --include=dev",
     "build:web": "npm run build --prefix frontend",
     "dev:web": "npm run dev --prefix frontend",
     "preview:web": "npm run preview --prefix frontend"
