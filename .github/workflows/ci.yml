@@ -57,6 +57,9 @@ jobs:
           docker logs eventease-ci-mongodb
           exit 1
 
+      - name: Validate application syntax
+        run: npm run build
+
       - name: Run unit and integration tests
         run: npm test
 
