@@ -28,9 +28,13 @@ Authorization: Bearer <JWT>
 12. Cancel a different confirmed registration using PATCH /api/registrations/:id/cancel.
 13. Confirm seats are restored and the oldest eligible waitlist requests are promoted.
 14. Join a waitlist using POST /api/registrations/waitlist, then check GET /api/registrations/waitlist/my.
-15. Review the event queue using GET /api/registrations/event/:eventId/waitlist with an Admin token.
-16. Review platform metrics using GET /api/analytics/overview and GET /api/events/:id/analytics.
-17. Test invalid ticket codes, duplicate registrations, insufficient capacity, cancelled-ticket access and cross-user ticket access.
+15. Leave a waiting queue position using DELETE /api/registrations/waitlist/:id, then rejoin and verify the cancelled entry remains as history.
+16. Test that a checked-in registration cannot be cancelled.
+17. Review all Admin events, including past events, using GET /api/events/admin/all.
+18. Edit total event capacity and verify that already-reserved seats are preserved.
+19. Review the event queue using GET /api/registrations/event/:eventId/waitlist with an Admin token.
+20. Review platform metrics using GET /api/analytics/overview and GET /api/events/:id/analytics.
+21. Test invalid ticket codes, duplicate registrations, insufficient capacity, cancelled-ticket access and cross-user ticket access.
 
 ## Automated tests
 
