@@ -39,6 +39,13 @@ function money(value) {
   }).format(Number(value || 0));
 }
 
+function toLocalDateTimeInput(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
 function toast(message, type = 'success') {
   const item = document.createElement('div');
   item.className = `toast toast-${type}`;
@@ -211,8 +218,21 @@ function renderAdmin() {
         }).join('')}</div>` : '<div class="empty-state small-empty"><p>No booking data yet. Performance will appear here after the first registration.</p></div>'}
       </section>
     </div>
+    <section class="content-panel"><div class="panel-heading"><div><h2>Manage events</h2><p class="muted">Edit details, inspect event performance, or remove events with no active bookings.</p></div><span class="count-badge">${state.events.length}</span></div>
+      ${state.events.length ? `<div class="table-wrap"><table class="event-admin-table"><thead><tr><th>Event</th><th>Date</th><th>Availability</th><th>Actions</th></tr></thead><tbody>${state.events.map((event) => `
+        <tr>
+          <td><strong>${escapeHtml(event.eventName)}</strong><small>${escapeHtml(event.category)} · ${escapeHtml(event.venue)}</small></td>
+          <td>${escapeHtml(formatDate(event.eventDate))}</td>
+          <td>${event.availableSeats} / ${event.totalSeats} seats</td>
+          <td><div class="row-actions">
+            <button class="button button-outline button-small" data-action="edit-event" data-id="${event._id}">Edit</button>
+            <button class="button button-outline button-small" data-action="event-analytics" data-id="${event._id}">Analytics</button>
+            <button class="button button-danger button-small" data-action="delete-event" data-id="${event._id}">Delete</button>
+          </div></td>
+        </tr>`).join('')}</tbody></table></div>` : '<div class="inline-note">No events have been created yet.</div>'}
+    </section>
     <section class="content-panel"><div class="panel-heading"><div><h2>Attendee operations</h2><p class="muted">Choose an event to review registrations and check tickets in.</p></div></div>
-      <div class="admin-tools"><select id="admin-event-select"><option value="">Select an upcoming event</option>${state.events.map((event) => `<option value="${event._id}" ${state.adminEventId === event._id ? 'selected' : ''}>${escapeHtml(event.eventName)}</option>`).join('')}</select><button class="button button-outline button-small" data-action="load-attendees">Load attendees</button></div>
+      <div class="admin-tools"><select id="admin-event-select"><option value="">Select an event</option>${state.events.map((event) => `<option value="${event._id}" ${state.adminEventId === event._id ? 'selected' : ''}>${escapeHtml(event.eventName)}</option>`).join('')}</select><button class="button button-outline button-small" data-action="load-attendees">Load attendees</button></div>
       <div id="attendee-results" class="attendee-results"><div class="inline-note">Choose an event to view attendee registrations.</div></div>
       <div class="checkin-box"><div><strong>Quick ticket check-in</strong><p>Enter the attendee's ticket code to validate and mark entry.</p></div><form id="checkin-form" class="checkin-form"><input name="ticketCode" placeholder="Paste ticket code" minlength="32" required><button class="button button-dark button-small" type="submit">Verify ticket</button></form></div>
     </section>
@@ -241,6 +261,37 @@ function renderModal() {
   if (state.modal === 'ticket') {
     const ticket = state.modalData;
     return `<div class="modal-scrim" data-action="close-modal"><section class="modal-card ticket-modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()"><button class="modal-close" data-action="close-modal">×</button><div class="ticket-header"><span class="eyebrow">YOUR EVENT PASS</span><span class="status-pill status-confirmed">CONFIRMED</span></div><h2>${escapeHtml(ticket.event?.eventName)}</h2><p class="muted">${formatDate(ticket.event?.eventDate)} · ${escapeHtml(ticket.event?.venue)}</p><div class="qr-frame"><img src="${escapeHtml(ticket.qrImageUrl)}" alt="QR code ticket for EventEase booking"><span>Show this code at the event entrance</span></div><div class="ticket-code"><span>SECURE TICKET CODE</span><strong>${escapeHtml(ticket.ticketCode)}</strong></div><div class="ticket-detail-grid"><div><small>Seats</small><strong>${ticket.numberOfSeats}</strong></div><div><small>Booking amount</small><strong>${money(ticket.totalAmount)}</strong></div><div><small>Booking reference</small><strong>${escapeHtml(String(ticket.registrationId).slice(-8).toUpperCase())}</strong></div></div><p class="form-footnote">The QR contains an opaque ticket code. Only an authenticated EventEase Admin can validate or check it in.</p><button class="button button-dark button-full" data-action="close-modal">Done</button></section></div>`;
+  }
+
+  if (state.modal === 'edit-event') {
+    const item = state.modalData;
+    return `<div class="modal-scrim" data-action="close-modal"><section class="modal-card edit-event-modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()"><button class="modal-close" data-action="close-modal">×</button><div class="eyebrow">EVENT MANAGEMENT</div><h2>Edit event</h2><p class="muted">Available seats are recalculated by the server. You cannot reduce total capacity below already reserved seats.</p>
+      <form id="edit-event-form" class="form-grid">
+        <input type="hidden" name="eventId" value="${escapeHtml(item._id)}">
+        <label class="field field-full">Event name<input name="eventName" required minlength="3" maxlength="120" value="${escapeHtml(item.eventName)}"></label>
+        <label class="field">Category<input name="category" required minlength="2" maxlength="60" value="${escapeHtml(item.category)}"></label>
+        <label class="field">Venue<input name="venue" required minlength="2" maxlength="200" value="${escapeHtml(item.venue)}"></label>
+        <label class="field field-full">Description<textarea name="description" maxlength="2000" rows="3">${escapeHtml(item.description || '')}</textarea></label>
+        <label class="field">Event date & time<input name="eventDate" type="datetime-local" required value="${toLocalDateTimeInput(item.eventDate)}"></label>
+        <label class="field">Total seats<input name="totalSeats" type="number" min="1" max="100000" required value="${item.totalSeats}"></label>
+        <label class="field">Fee per seat (₹)<input name="registrationFee" type="number" min="0" step="0.01" required value="${item.registrationFee}"></label>
+        <div class="field field-full modal-actions"><button type="button" class="button button-outline" data-action="close-modal">Cancel</button><button type="submit" class="button button-primary">Save changes ↗</button></div>
+      </form>
+    </section></div>`;
+  }
+
+  if (state.modal === 'event-analytics') {
+    const { event, analytics } = state.modalData;
+    return `<div class="modal-scrim" data-action="close-modal"><section class="modal-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()"><button class="modal-close" data-action="close-modal">×</button><div class="eyebrow">EVENT PERFORMANCE</div><h2>${escapeHtml(event.eventName)}</h2><p class="muted">${formatDate(event.eventDate)} · ${escapeHtml(event.venue)}</p>
+      <div class="metric-grid event-analytics-grid">
+        ${metricCard('Registrations', analytics.registrations, '↗', 'Confirmed')}
+        ${metricCard('Seats booked', analytics.confirmedSeats, '⌁', 'Reserved')}
+        ${metricCard('Occupancy', `${analytics.occupancyRate}%`, '◒', 'Capacity used')}
+        ${metricCard('Check-ins', analytics.checkIns, '✓', 'Attendees arrived')}
+      </div>
+      <div class="inline-note">Gross confirmed booking value: <strong>${money(analytics.grossConfirmedRevenue)}</strong>. This is not a payment-settlement report.</div>
+      <button class="button button-dark button-full" data-action="close-modal" style="margin-top:16px">Done</button>
+    </section></div>`;
   }
 
   if (state.modal === 'confirm-cancel') {
@@ -336,6 +387,50 @@ async function joinWaitlist(eventId, numberOfSeats = 1) {
     toast('You are on the waitlist. We will promote eligible requests as seats open.');
     state.tab = 'waitlist';
     await render();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+async function saveEvent(form) {
+  const data = Object.fromEntries(new FormData(form).entries());
+  const eventId = data.eventId;
+  delete data.eventId;
+  data.totalSeats = Number(data.totalSeats);
+  data.registrationFee = Number(data.registrationFee);
+  data.eventDate = new Date(data.eventDate).toISOString();
+
+  try {
+    await api(`/api/events/${eventId}`, { method: 'PUT', body: data });
+    state.modal = null;
+    toast('Event details updated.');
+    await render();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+async function deleteEvent(eventId) {
+  const event = state.events.find((item) => item._id === eventId);
+  const confirmed = window.confirm(`Delete "${event?.eventName || 'this event'}"? This is only allowed when there are no confirmed registrations.`);
+  if (!confirmed) return;
+
+  try {
+    await api(`/api/events/${eventId}`, { method: 'DELETE' });
+    toast('Event deleted.');
+    if (state.adminEventId === eventId) state.adminEventId = '';
+    await render();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+async function showEventAnalytics(eventId) {
+  try {
+    const result = await api(`/api/events/${eventId}/analytics`);
+    state.modal = 'event-analytics';
+    state.modalData = result;
+    shell(renderAdmin());
   } catch (error) {
     toast(error.message, 'error');
   }
@@ -509,6 +604,17 @@ document.addEventListener('click', async (event) => {
     await cancelBooking(target.dataset.id);
   } else if (action === 'load-attendees') {
     await loadAttendees();
+  } else if (action === 'edit-event') {
+    const selected = state.events.find((item) => item._id === target.dataset.id);
+    if (selected) {
+      state.modal = 'edit-event';
+      state.modalData = selected;
+      shell(renderAdmin());
+    }
+  } else if (action === 'delete-event') {
+    await deleteEvent(target.dataset.id);
+  } else if (action === 'event-analytics') {
+    await showEventAnalytics(target.dataset.id);
   }
 });
 
@@ -517,6 +623,7 @@ document.addEventListener('submit', async (event) => {
   if (event.target.id === 'auth-form') await submitAuth(event.target);
   if (event.target.id === 'create-event-form') await submitCreateEvent(event.target);
   if (event.target.id === 'checkin-form') await checkIn(event.target);
+  if (event.target.id === 'edit-event-form') await saveEvent(event.target);
 });
 
 document.addEventListener('input', (event) => {
