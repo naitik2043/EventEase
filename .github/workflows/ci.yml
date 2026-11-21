@@ -1,8 +1,8 @@
-name: Node.js CI
+name: EventEase CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/**", "fix/**"]
   pull_request:
     branches: [main]
 
@@ -11,12 +11,15 @@ permissions:
 
 jobs:
   test:
-    name: Unit tests (Node.js ${{ matrix.node-version }})
+    name: Node.js ${{ matrix.node-version }} / MongoDB integration
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 22]
+        node-version: [22, 24, 26]
+
+    env:
+      MONGO_TEST_URI: mongodb://localhost:27017/eventease_test?replicaSet=rs0
 
     steps:
       - name: Check out repository
@@ -31,5 +34,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run unit tests
+      - name: Start MongoDB replica set
+        run: |
+          docker run -d --name eventease-ci-mongodb -p 27017:27017 mongo:7.0 mongod --replSet rs0 --bind_ip_all
+          for attempt in {1..30}; do
+            if docker exec eventease-ci-mongodb mongosh --quiet --eval "db.adminCommand({ ping: 1 }).ok" 2>/dev/null | grep -q 1; then
+              break
+            fi
+            sleep 2
+          done
+          docker exec eventease-ci-mongodb mongosh --quiet --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
+          for attempt in {1..30}; do
+            if docker exec eventease-ci-mongodb mongosh --quiet --eval "db.hello().isWritablePrimary" 2>/dev/null | grep -q true; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MongoDB replica set did not become primary."
+          docker logs eventease-ci-mongodb
+          exit 1
+
+      - name: Run unit and integration tests
         run: npm test
+
+      - name: Stop MongoDB
+        if: always()
+        run: docker rm -f eventease-ci-mongodb || true
