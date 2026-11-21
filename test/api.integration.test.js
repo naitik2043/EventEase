@@ -167,6 +167,12 @@ integrationTest(
       const listResponse = await request('/api/events?search=Integration&category=Technology');
       assert.equal(listResponse.status, 200);
       assert.ok(listResponse.body.events.some((event) => event._id === eventId));
+
+      const adminCatalogue = await request('/api/events/admin/all?limit=100', {
+        token: adminToken
+      });
+      assert.equal(adminCatalogue.status, 200);
+      assert.ok(adminCatalogue.body.events.some((event) => event._id === eventId));
     });
 
     await t.test('user can book seats and event capacity is decremented', async () => {
@@ -310,6 +316,17 @@ integrationTest(
       assert.equal(queueEntry.status, 201);
       assert.equal(queueEntry.body.waitlistEntry.status, 'Waiting');
 
+      const waitingAnalytics = await request(`/api/events/${waitlistEventId}/analytics`, {
+        token: adminToken
+      });
+      assert.equal(waitingAnalytics.status, 200);
+      assert.equal(waitingAnalytics.body.analytics.waitingListEntries, 1);
+
+      const waitingOverview = await request('/api/analytics/overview', {
+        token: adminToken
+      });
+      assert.ok(waitingOverview.body.metrics.activeWaitlistRequests >= 1);
+
       const leaveQueue = await request(
         `/api/registrations/waitlist/${queueEntry.body.waitlistEntry._id}`,
         { method: 'DELETE', token: secondToken }
@@ -346,6 +363,19 @@ integrationTest(
       assert.equal(myBookings.body.registrations.length, 1);
       assert.equal(myBookings.body.registrations[0].registrationStatus, 'Confirmed');
 
+      const crossUserTicket = await request(
+        `/api/registrations/${myBookings.body.registrations[0]._id}/ticket`,
+        { token: userToken }
+      );
+      assert.equal(crossUserTicket.status, 403);
+
+      const userCheckIn = await request('/api/registrations/check-in', {
+        method: 'POST',
+        token: userToken,
+        body: { ticketCode: 'a'.repeat(48) }
+      });
+      assert.equal(userCheckIn.status, 403);
+
       const ticket = await request(
         `/api/registrations/${myBookings.body.registrations[0]._id}/ticket`,
         { token: secondToken }
@@ -380,6 +410,7 @@ integrationTest(
       assert.equal(analytics.body.analytics.registrations, 1);
       assert.equal(analytics.body.analytics.checkIns, 1);
       assert.equal(analytics.body.analytics.occupancyRate, 100);
+      assert.equal(analytics.body.analytics.waitingListEntries, 0);
 
       const queueForAdmin = await request(
         `/api/registrations/event/${waitlistEventId}/waitlist`,
