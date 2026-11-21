@@ -57,7 +57,7 @@ jobs:
           docker logs eventease-ci-mongodb
           exit 1
 
-      - name: Validate application syntax
+      - name: Install frontend dependencies and build React application
         run: npm run build
 
       - name: Validate Docker Compose configuration
