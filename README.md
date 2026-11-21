@@ -175,7 +175,8 @@ docker compose exec api npm run seed:admin
 
 The backend is available at:
 
-- Health endpoint: http://localhost:5000/api/health
+- Liveness endpoint: http://localhost:5000/api/health
+- Readiness endpoint: http://localhost:5000/api/health/ready
 - Swagger UI: http://localhost:5000/api-docs
 - OpenAPI JSON: http://localhost:5000/api-docs/openapi.json
 
@@ -249,7 +250,8 @@ Authorization: Bearer <JWT>
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| GET | `/api/health` | Public | API health check |
+| GET | `/api/health` | Public | API liveness check |
+| GET | `/api/health/ready` | Public | Readiness check including MongoDB connection state |
 | POST | `/api/auth/register` | Public | Register a normal user |
 | POST | `/api/auth/login` | Public | Authenticate and receive a JWT |
 
