@@ -1,8 +1,8 @@
 {
   "name": "eventease-backend",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
-  "description": "Production-minded event management and registration REST API built with Node.js, Express, MongoDB and Mongoose",
+  "description": "Full-stack event management platform with transactional Node.js and Express APIs, MongoDB, QR tickets, FIFO waitlists, and admin analytics",
   "type": "module",
   "main": "server.js",
   "license": "MIT",
@@ -37,6 +37,7 @@
   "keywords": [
     "event-management",
     "event-registration",
+    "full-stack",
     "nodejs",
     "express",
     "mongodb",
@@ -44,6 +45,8 @@
     "rest-api",
     "jwt",
     "transactions",
+    "qr-tickets",
+    "waitlist",
     "backend"
   ],
   "repository": {
