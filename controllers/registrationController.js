@@ -167,7 +167,8 @@ export const cancelRegistration = asyncHandler(async (req, res) => {
         {
           _id: existing._id,
           userId: req.user._id,
-          registrationStatus: 'Confirmed'
+          registrationStatus: 'Confirmed',
+          checkedInAt: null
         },
         { $set: { registrationStatus: 'Cancelled' } },
         { new: true, session }
@@ -286,57 +287,80 @@ export const cancelRegistration = asyncHandler(async (req, res) => {
 
 export const joinWaitlist = asyncHandler(async (req, res) => {
   const { eventId, numberOfSeats } = req.body;
-  const event = await Event.findById(eventId);
-
-  if (!event) throw new AppError('Event not found.', 404);
-  if (event.eventDate <= new Date()) {
-    throw new AppError('You cannot join the waitlist for a past event.', 400);
-  }
-  if (event.availableSeats >= numberOfSeats) {
-    throw new AppError('Enough seats are currently available. Register directly instead.', 409);
-  }
-
-  const registration = await Registration.findOne({
-    userId: req.user._id,
-    eventId
-  });
-  if (registration) {
-    throw new AppError('A registration already exists for this event.', 409);
-  }
-
-  const existing = await Waitlist.findOne({
-    userId: req.user._id,
-    eventId
-  });
-
-  if (existing?.status === 'Waiting') {
-    throw new AppError('You are already on this event waitlist.', 409);
-  }
-  // A previous Cancelled entry is retained as history; the partial unique index
-  // permits a fresh queue position while keeping one active Waiting entry.
-  if (existing?.status === 'Promoted') {
-    throw new AppError('Your waitlist request has already been promoted.', 409);
-  }
+  const session = await mongoose.startSession();
+  let waitlistEntryId;
 
   try {
-    const waitlistEntry = await Waitlist.create({
-      userId: req.user._id,
-      eventId,
-      numberOfSeats,
-      status: 'Waiting'
-    });
+    await session.withTransaction(async () => {
+      // Update the event document while adding a queue entry. The shared event
+      // write serializes this decision with concurrent bookings and deletions.
+      const event = await Event.findOneAndUpdate(
+        {
+          _id: eventId,
+          eventDate: { $gt: new Date() },
+          availableSeats: { $lt: numberOfSeats }
+        },
+        { $inc: { waitlistRequests: 1 } },
+        { new: true, session }
+      );
 
-    res.status(201).json({
-      success: true,
-      message: 'You have joined the event waitlist.',
-      waitlistEntry
-    });
+      if (!event) {
+        const current = await Event.findById(eventId).session(session);
+        if (!current) throw new AppError('Event not found.', 404);
+        if (current.eventDate <= new Date()) {
+          throw new AppError('You cannot join the waitlist for a past event.', 400);
+        }
+        if (current.availableSeats >= numberOfSeats) {
+          throw new AppError('Enough seats are currently available. Register directly instead.', 409);
+        }
+        throw new AppError('The event changed while you were joining the waitlist. Please retry.', 409);
+      }
+
+      const registration = await Registration.findOne({
+        userId: req.user._id,
+        eventId
+      }).session(session);
+
+      if (registration) {
+        throw new AppError('A registration already exists for this event.', 409);
+      }
+
+      const existing = await Waitlist.findOne({
+        userId: req.user._id,
+        eventId,
+        status: 'Waiting'
+      }).session(session);
+
+      if (existing) {
+        throw new AppError('You are already on this event waitlist.', 409);
+      }
+
+      const [entry] = await Waitlist.create([{
+        userId: req.user._id,
+        eventId,
+        numberOfSeats,
+        status: 'Waiting'
+      }], { session });
+
+      waitlistEntryId = entry._id;
+    }, transactionOptions);
   } catch (error) {
     if (error.code === 11000) {
-      throw new AppError('You already have a waitlist entry for this event.', 409);
+      throw new AppError('You already have an active waitlist request for this event.', 409);
     }
     throw error;
+  } finally {
+    await session.endSession();
   }
+
+  const waitlistEntry = await Waitlist.findById(waitlistEntryId)
+    .populate('eventId', 'eventName eventDate venue category');
+
+  res.status(201).json({
+    success: true,
+    message: 'You have joined the event waitlist.',
+    waitlistEntry
+  });
 });
 
 export const getMyWaitlist = asyncHandler(async (req, res) => {
