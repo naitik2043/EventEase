@@ -23,13 +23,12 @@ docker compose exec api npm run seed:admin
 ```
 
 API endpoints:
-- Health: http://localhost:5000/api/health
 - Liveness: http://localhost:5000/api/health
 - Readiness (checks MongoDB connectivity): http://localhost:5000/api/health/ready
 - Swagger UI: http://localhost:5000/api-docs
 - OpenAPI JSON: http://localhost:5000/api-docs/openapi.json
 
-The Docker MongoDB replica set is for development/testing only. Use a managed, highly available replica set for production.
+The Docker MongoDB replica set is for development/testing only. Use a managed, highly available replica set for production. The MongoDB container port is bound to localhost only. The API image includes a readiness-based Docker health check.
 
 ## Run as a Node.js service
 
