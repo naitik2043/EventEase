@@ -367,6 +367,12 @@ integrationTest(
       });
       assert.equal(duplicateCheckIn.status, 409);
 
+      const checkedInCancellation = await request(
+        `/api/registrations/${myBookings.body.registrations[0]._id}/cancel`,
+        { method: 'PATCH', token: secondToken }
+      );
+      assert.equal(checkedInCancellation.status, 409);
+
       const analytics = await request(`/api/events/${waitlistEventId}/analytics`, {
         token: adminToken
       });
@@ -480,6 +486,106 @@ integrationTest(
 
       assert.equal(deletion.status, 409);
       assert.ok(await Event.findById(protectedEventId));
+    });
+
+    await t.test('Admin can adjust total capacity without losing reserved seat accounting', async () => {
+      const created = await request('/api/events', {
+        method: 'POST',
+        token: adminToken,
+        body: {
+          eventName: 'Capacity Adjustment Workshop',
+          category: 'Technology',
+          eventDate: new Date(Date.now() + 80 * 86400000).toISOString(),
+          venue: 'Capacity Hall',
+          totalSeats: 4,
+          registrationFee: 40
+        }
+      });
+      assert.equal(created.status, 201);
+      const capacityEventId = created.body.event._id;
+
+      const booking = await request('/api/registrations', {
+        method: 'POST',
+        token: userToken,
+        body: { eventId: capacityEventId, numberOfSeats: 2 }
+      });
+      assert.equal(booking.status, 201);
+
+      const forbiddenUpdate = await request(`/api/events/${capacityEventId}`, {
+        method: 'PUT',
+        token: userToken,
+        body: { totalSeats: 5 }
+      });
+      assert.equal(forbiddenUpdate.status, 403);
+
+      const update = await request(`/api/events/${capacityEventId}`, {
+        method: 'PUT',
+        token: adminToken,
+        body: { totalSeats: 6 }
+      });
+      assert.equal(update.status, 200);
+      assert.equal(update.body.event.totalSeats, 6);
+      assert.equal(update.body.event.availableSeats, 4);
+
+      const invalidCapacity = await request(`/api/events/${capacityEventId}`, {
+        method: 'PUT',
+        token: adminToken,
+        body: { totalSeats: 1 }
+      });
+      assert.equal(invalidCapacity.status, 400);
+    });
+
+    await t.test('Admin event deletion also removes waiting queue entries', async () => {
+      const created = await request('/api/events', {
+        method: 'POST',
+        token: adminToken,
+        body: {
+          eventName: 'Queue Cleanup Event',
+          category: 'Technology',
+          eventDate: new Date(Date.now() + 90 * 86400000).toISOString(),
+          venue: 'Queue Cleanup Hall',
+          totalSeats: 1,
+          registrationFee: 35
+        }
+      });
+      assert.equal(created.status, 201);
+      const cleanupEventId = created.body.event._id;
+
+      const booking = await request('/api/registrations', {
+        method: 'POST',
+        token: userToken,
+        body: { eventId: cleanupEventId, numberOfSeats: 1 }
+      });
+      assert.equal(booking.status, 201);
+
+      const waitlist = await request('/api/registrations/waitlist', {
+        method: 'POST',
+        token: (await request('/api/auth/login', {
+          method: 'POST',
+          body: { email: adminEmail, password: adminPassword }
+        })).body.token,
+        body: { eventId: cleanupEventId, numberOfSeats: 2 }
+      });
+      // An Admin may also join the attendee waitlist because this endpoint
+      // is authenticated, not role-restricted.
+      assert.equal(waitlist.status, 201);
+
+      const cancellation = await request(
+        `/api/registrations/${booking.body.registration._id}/cancel`,
+        { method: 'PATCH', token: userToken }
+      );
+      assert.equal(cancellation.status, 200);
+      assert.equal(cancellation.body.promotedFromWaitlist, 0);
+
+      assert.equal(await Waitlist.countDocuments({ eventId: cleanupEventId, status: 'Waiting' }), 1);
+
+      const deletion = await request(`/api/events/${cleanupEventId}`, {
+        method: 'DELETE',
+        token: adminToken
+      });
+      assert.equal(deletion.status, 200);
+      assert.equal(await Waitlist.countDocuments({ eventId: cleanupEventId }), 0);
+      assert.equal(await Event.findById(cleanupEventId), null);
     });
   }
 );
