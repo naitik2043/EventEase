@@ -34,7 +34,7 @@ app.use(helmet({
       imgSrc: ["'self'", 'data:', 'https:'],
       objectSrc: ["'none'"],
       scriptSrc: ["'self'", 'https://unpkg.com'],
-      styleSrc: ["'self'", 'https://unpkg.com', "'unsafe-inline'"]
+      styleSrc: ["'self'", 'https://unpkg.com', 'https://fonts.googleapis.com', "'unsafe-inline'"]
     }
   }
 }));
