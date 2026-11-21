@@ -19,7 +19,7 @@ Authorization: Bearer <JWT>
 4. Register a normal user using POST /api/auth/register.
 5. Log in as Admin and User through POST /api/auth/login.
 6. Create an upcoming event with the Admin token.
-6. Confirm a normal User receives 403 when creating, updating or deleting events.
+7. Confirm a normal User receives 403 when creating, updating or deleting events.
 7. Browse and filter events through GET /api/events.
 8. Book seats using POST /api/registrations.
 9. View bookings using GET /api/registrations/my.
