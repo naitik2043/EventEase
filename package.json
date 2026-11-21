@@ -1,18 +1,21 @@
 {
   "name": "eventease-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Role-based REST API for event management and attendee registration, built with Node.js, Express, MongoDB and Mongoose",
+  "description": "Production-minded event management and registration REST API built with Node.js, Express, MongoDB and Mongoose",
   "type": "module",
   "main": "server.js",
+  "license": "MIT",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed:admin": "node scripts/seedAdmin.js",
-    "test": "node --test"
+    "test": "node --test",
+    "test:unit": "node --test test/AppError.test.js test/asyncHandler.test.js",
+    "test:integration": "node --test test/api.integration.test.js"
   },
   "engines": {
-    "node": ">=18.18.0"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -39,6 +42,7 @@
     "mongoose",
     "rest-api",
     "jwt",
+    "transactions",
     "backend"
   ],
   "repository": {

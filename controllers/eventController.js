@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Event from '../models/Event.js';
 import Registration from '../models/Registration.js';
 import AppError from '../utils/AppError.js';
@@ -34,7 +35,9 @@ export const getUpcomingEvents = asyncHandler(async (req, res) => {
   const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 10, 1), 100);
   const filter = { eventDate: { $gt: new Date() } };
 
-  if (req.query.category) filter.category = new RegExp(`^${escapeRegex(req.query.category.trim())}$`, 'i');
+  if (req.query.category) {
+    filter.category = new RegExp(`^${escapeRegex(req.query.category.trim())}$`, 'i');
+  }
   if (req.query.search) {
     const search = new RegExp(escapeRegex(req.query.search.trim()), 'i');
     filter.$or = [{ eventName: search }, { description: search }];
@@ -42,7 +45,7 @@ export const getUpcomingEvents = asyncHandler(async (req, res) => {
 
   const [events, total] = await Promise.all([
     Event.find(filter)
-      .populate('createdBy', 'name email')
+      .populate('createdBy', 'name')
       .sort({ eventDate: 1 })
       .skip((page - 1) * limit)
       .limit(limit),
@@ -58,7 +61,7 @@ export const getUpcomingEvents = asyncHandler(async (req, res) => {
 });
 
 export const getEventById = asyncHandler(async (req, res) => {
-  const event = await Event.findById(req.params.id).populate('createdBy', 'name email');
+  const event = await Event.findById(req.params.id).populate('createdBy', 'name');
   if (!event) throw new AppError('Event not found.', 404);
   res.status(200).json({ success: true, event });
 });
@@ -84,41 +87,62 @@ export const updateEvent = asyncHandler(async (req, res) => {
   const current = await Event.findById(req.params.id);
   if (!current) throw new AppError('Event not found.', 404);
 
-  // Keep the number of already-booked seats unchanged when total capacity is edited.
   if (updates.totalSeats !== undefined) {
     const bookedSeats = current.totalSeats - current.availableSeats;
     if (updates.totalSeats < bookedSeats) {
       throw new AppError(`totalSeats cannot be less than ${bookedSeats} already-booked seats.`, 400);
     }
+
     const updated = await Event.findOneAndUpdate(
-      { _id: current._id, totalSeats: current.totalSeats, availableSeats: current.availableSeats },
+      {
+        _id: current._id,
+        totalSeats: current.totalSeats,
+        availableSeats: current.availableSeats
+      },
       { $set: { ...updates, availableSeats: updates.totalSeats - bookedSeats } },
       { new: true, runValidators: true }
     );
-    if (!updated) throw new AppError('Event changed while you were editing it. Please retry.', 409);
+
+    if (!updated) {
+      throw new AppError('Event changed while you were editing it. Please retry.', 409);
+    }
     return res.status(200).json({ success: true, message: 'Event updated successfully.', event: updated });
   }
 
-  const updated = await Event.findByIdAndUpdate(current._id, { $set: updates }, {
-    new: true,
-    runValidators: true
-  });
+  const updated = await Event.findByIdAndUpdate(
+    current._id,
+    { $set: updates },
+    { new: true, runValidators: true }
+  );
   res.status(200).json({ success: true, message: 'Event updated successfully.', event: updated });
 });
 
 export const deleteEvent = asyncHandler(async (req, res) => {
-  const event = await Event.findById(req.params.id);
-  if (!event) throw new AppError('Event not found.', 404);
+  const session = await mongoose.startSession();
 
-  const activeRegistrations = await Registration.countDocuments({
-    eventId: event._id,
-    registrationStatus: 'Confirmed'
-  });
-  if (activeRegistrations > 0) {
-    throw new AppError('This event has confirmed registrations. Cancel them before deleting the event.', 409);
+  try {
+    await session.withTransaction(async () => {
+      const event = await Event.findById(req.params.id).session(session);
+      if (!event) throw new AppError('Event not found.', 404);
+
+      const activeRegistrations = await Registration.countDocuments({
+        eventId: event._id,
+        registrationStatus: 'Confirmed'
+      }).session(session);
+
+      if (activeRegistrations > 0) {
+        throw new AppError(
+          'This event has confirmed registrations. Cancel them before deleting the event.',
+          409
+        );
+      }
+
+      await Registration.deleteMany({ eventId: event._id }, { session });
+      await Event.deleteOne({ _id: event._id }, { session });
+    });
+
+    res.status(200).json({ success: true, message: 'Event deleted successfully.' });
+  } finally {
+    await session.endSession();
   }
-
-  await Registration.deleteMany({ eventId: event._id });
-  await event.deleteOne();
-  res.status(200).json({ success: true, message: 'Event deleted successfully.' });
 });

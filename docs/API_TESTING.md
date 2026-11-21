@@ -1,127 +1,61 @@
-# EventEase API testing checklist
+# EventEase API Testing Guide
 
-Use Postman or Thunder Client. Start MongoDB and run `npm run seed:admin`, then start the API.
+Base URL: http://localhost:5000
 
-Base URL: `http://localhost:5000`
+Interactive documentation: http://localhost:5000/api-docs
 
-For protected requests, add:
+Use the included Postman collection or Swagger UI. Protected requests require:
 
 ```http
-Authorization: Bearer <token>
+Authorization: Bearer <JWT>
 ```
 
-## Suggested test sequence
+## Suggested manual test sequence
 
-### 1. Register a normal user
+1. Register a normal account using POST /api/auth/register.
+2. Log in as the seeded Admin using POST /api/auth/login.
+3. Log in as the normal user and save both JWTs.
+4. Create an upcoming event using the Admin token.
+5. Attempt to create an event with the User token; expect 403 Forbidden.
+6. Browse events using GET /api/events?search=Workshop&category=Technology&page=1&limit=5.
+7. Book seats as the normal user using POST /api/registrations.
+8. View the user's registrations using GET /api/registrations/my.
+9. Repeat the same booking; expect 409 Conflict.
+10. Attempt to book more seats than are available; expect 409 Conflict and unchanged capacity.
+11. Cancel the booking using PATCH /api/registrations/:id/cancel.
+12. Fetch the event and verify the cancelled seats have been restored.
+13. Attempt to delete an event with confirmed registrations; expect 409 Conflict.
 
-`POST /api/auth/register`
+## Automated tests
 
-```json
-{
-  "name": "Demo User",
-  "email": "demo.user@example.com",
-  "password": "DemoPass123!"
-}
+Unit tests:
+
+```bash
+npm run test:unit
 ```
 
-Expected: `201 Created`, user data and JWT.
+MongoDB-backed integration tests require a dedicated test database running as a replica set. The database name must include test; the test suite refuses to run against another database name.
 
-### 2. Login as Admin
-
-`POST /api/auth/login`
-
-```json
-{
-  "email": "admin@example.com",
-  "password": "the ADMIN_PASSWORD from your .env"
-}
+```bash
+MONGO_TEST_URI="mongodb://127.0.0.1:27017/eventease_test?replicaSet=rs0" npm test
 ```
 
-Expected: `200 OK`, Admin role and JWT. Save this token as `adminToken` in Postman.
+With Docker Compose, start the local replica set first:
 
-### 3. Login as normal user
-
-`POST /api/auth/login` using the normal user's email and password. Save the token as `userToken`.
-
-### 4. Create event as Admin
-
-`POST /api/events` with `adminToken`.
-
-```json
-{
-  "eventName": "Backend Development Workshop",
-  "description": "Hands-on Node and Express session.",
-  "category": "Technology",
-  "eventDate": "2027-06-15T10:00:00.000Z",
-  "venue": "KIET Group of Institutions, Ghaziabad",
-  "totalSeats": 10,
-  "registrationFee": 150
-}
+```bash
+docker compose up -d mongo
 ```
 
-Expected: `201 Created`. Copy the returned event `_id` for the next tests.
+The GitHub Actions workflow provisions a disposable MongoDB replica set and runs unit and integration tests across Node.js 22, 24 and 26.
 
-### 5. Attempt to create event as normal user
+## Integration coverage
 
-Repeat `POST /api/events` with `userToken`.
+The integration suite covers public role assignment, login, invalid credentials, protected routes, Admin authorization, event creation and discovery, booking, duplicate prevention, cancellation and seat restoration, insufficient capacity, and deletion protection.
 
-Expected: `403 Forbidden`.
+## Concurrency verification
 
-### 6. Browse upcoming events
+The conditional seat decrement and MongoDB transaction provide the core concurrency-safety mechanism. Before a production release, run a stress test against the target MongoDB replica-set topology with simultaneous booking requests and verify that confirmed seat totals never exceed event capacity.
 
-`GET /api/events?search=Backend&category=Technology&page=1&limit=5`
+## Evidence screenshots
 
-Expected: `200 OK` and pagination information.
-
-### 7. Book seats as normal user
-
-`POST /api/registrations` with `userToken`.
-
-```json
-{
-  "eventId": "PASTE_EVENT_ID_HERE",
-  "numberOfSeats": 2
-}
-```
-
-Expected: `201 Created`, `totalAmount: 300`, `registrationStatus: Confirmed`. Save registration `_id`.
-
-### 8. View the logged-in user's registrations
-
-`GET /api/registrations/my` with `userToken`.
-
-Expected: `200 OK`, only the current user's registrations.
-
-### 9. Try duplicate registration
-
-Repeat step 7 for the same event and user.
-
-Expected: `409 Conflict`.
-
-### 10. Try insufficient seats
-
-Create another upcoming event with only 1 seat. Try to book 2 seats.
-
-Expected: `409 Conflict`; available seats should remain unchanged.
-
-### 11. Try protected API without a token
-
-Call `POST /api/registrations` or `POST /api/events` without the Authorization header.
-
-Expected: `401 Unauthorized`.
-
-### 12. Cancel the registration
-
-`PATCH /api/registrations/PASTE_REGISTRATION_ID_HERE/cancel` with `userToken`.
-
-Expected: `200 OK`; response should show the restored `availableSeats`.
-
-### 13. Verify event seat count
-
-`GET /api/events/PASTE_EVENT_ID_HERE`
-
-Expected: `availableSeats` is back to 10 after the 2-seat registration is cancelled.
-
-## Screenshot evidence
-
-Capture genuine screenshots from your own local server. For each test, show the HTTP method, full endpoint, relevant request body or Authorization header, response body, and HTTP status. Include both successful and failed cases as required by the assessment brief.
+For assessment evidence, capture genuine requests from Postman or Swagger UI. Include the HTTP method, full endpoint, relevant request body or Authorization header, response body and HTTP status. Include both successful and rejected cases.
