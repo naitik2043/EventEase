@@ -4,6 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
@@ -13,7 +15,7 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import requestLogger from './middleware/requestLogger.js';
 
 const app = express();
-const docsDirectory = fileURLToPath(new URL('./docs/', import.meta.url));
+const docsDirectory = path.join(path.dirname(fileURLToPath(import.meta.url)), 'docs');
 
 app.disable('x-powered-by');
 app.use(requestLogger);
