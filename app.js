@@ -13,7 +13,7 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import requestLogger from './middleware/requestLogger.js';
 
 const app = express();
-const docsDirectory = new URL('./docs/', import.meta.url).pathname;
+const docsDirectory = fileURLToPath(new URL('./docs/', import.meta.url));
 
 app.disable('x-powered-by');
 app.use(requestLogger);
