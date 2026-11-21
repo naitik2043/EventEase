@@ -450,14 +450,15 @@ export default function App() {
 
   async function handleCreateEvent(event) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const data = Object.fromEntries(form.entries());
     data.totalSeats = Number(data.totalSeats);
     data.registrationFee = Number(data.registrationFee);
     data.eventDate = new Date(data.eventDate).toISOString();
     try {
       await api('/api/events', { method: 'POST', body: data });
-      event.currentTarget.reset();
+      formElement.reset();
       notify('Event published successfully.');
       await loadAdminEvents();
       await loadAnalytics();
@@ -535,14 +536,15 @@ export default function App() {
 
   async function handleCheckIn(event) {
     event.preventDefault();
-    const code = new FormData(event.currentTarget).get('ticketCode');
+    const formElement = event.currentTarget;
+    const code = new FormData(formElement).get('ticketCode');
     try {
       const response = await api('/api/registrations/check-in', {
         method: 'POST',
         body: { ticketCode: code }
       });
       notify('Checked in: ' + (response.checkIn.attendee?.name || 'attendee') + '.');
-      event.currentTarget.reset();
+      formElement.reset();
       if (adminEventId) await loadAttendees();
       await loadAnalytics();
     } catch (error) {
