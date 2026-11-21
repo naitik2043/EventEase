@@ -65,7 +65,7 @@ Keep credentials in the hosting provider's encrypted environment settings. Never
 
 ## Provision the first Admin
 
-Public registration always creates a normal User. Provision the first Admin through a controlled seed operation:
+Public registration always creates a normal User. The seed script can also promote an existing account matching ADMIN_EMAIL to Admin and resets that account's password to ADMIN_PASSWORD. Keep the seed credentials private and run the script only from a trusted environment. Provision the first Admin through a controlled seed operation:
 
 ```bash
 npm run seed:admin
