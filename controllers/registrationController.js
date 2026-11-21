@@ -95,7 +95,7 @@ export const createRegistration = asyncHandler(async (req, res) => {
     .populate('eventId', 'eventName eventDate venue category registrationFee');
   const user = await User.findById(req.user._id).select('name email');
 
-  // Email delivery is best-effort; a mail-provider outage must not undo a paid/confirmed booking.
+  // Email delivery is best-effort; a mail-provider outage must not undo a confirmed booking.
   await sendBookingConfirmation({
     user,
     event: populated.eventId,
