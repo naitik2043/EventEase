@@ -277,11 +277,7 @@ export const cancelRegistration = asyncHandler(async (req, res) => {
     message: 'Registration cancelled and seats restored successfully.',
     registration: cancelledRegistration,
     availableSeats: updatedEvent.availableSeats,
-    promotedFromWaitlist: promotedRegistrations.map((item) => ({
-      registrationId: item._id,
-      userId: item.userId?._id,
-      ticketCode: item.ticketCode
-    }))
+    promotedFromWaitlist: promotedRegistrations.length
   });
 });
 
