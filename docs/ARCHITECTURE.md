@@ -102,6 +102,8 @@ The server connects to MongoDB before it starts listening for HTTP requests. API
 
 The seat decrement/increment operations use MongoDB conditional updates, and duplicate registrations are protected by a unique index. However, registration records and event seat counts are separate MongoDB documents. The current implementation uses compensating cleanup; it does **not** wrap both writes in a multi-document transaction. A deployment that requires stronger crash-safe consistency should use MongoDB transactions on a replica set and add integration tests for concurrent booking and cancellation.
 
+Event deletion also uses a read/check/delete sequence across separate operations. A booking request could interleave between the confirmed-registration check and the event deletion. Before production use, protect event lifecycle changes with a transaction or an explicit event state/locking strategy, and add a concurrency test for deletion racing with registration.
+
 ## 6. Event lifecycle
 
 - Public clients can list upcoming events and read event details.
