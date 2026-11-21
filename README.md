@@ -1,44 +1,84 @@
-# EventEase — Event Registration & Management System
+# EventEase — Event Registration & Management API
 
-A modular RESTful backend built with **Node.js, Express.js, MongoDB, and Mongoose** for the FSD practical assessment.
+A role-based REST API for managing events and attendee bookings, built with **Node.js, Express.js, MongoDB, and Mongoose**.
 
-Users can create an account, log in, browse upcoming events, book seats, view their bookings, and cancel a booking. Admins can create, update, and delete events and view registrations for an event.
+EventEase supports public event discovery, secure user authentication, Admin-managed events, seat-aware registrations, booking cancellation, and an API testing workflow.
 
-## 1. Features
+<p align="center">
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-18.18%2B-339933?logo=nodedotjs&logoColor=white">
+  <img alt="Express" src="https://img.shields.io/badge/Express.js-4.x-000000?logo=express&logoColor=white">
+  <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white">
+  <img alt="API" src="https://img.shields.io/badge/Architecture-REST%20API-blue">
+  <img alt="License" src="https://img.shields.io/badge/License-Not%20Declared-lightgrey">
+</p>
 
-- User registration and login with bcrypt password hashing.
-- JWT-based authentication and Admin/User role authorization.
-- Admin-only event creation, update, and deletion.
-- Upcoming-event listing, name search, category filtering, and pagination.
-- Event registration with duplicate-booking and seat-availability checks.
-- Atomic seat decrement when a booking is confirmed.
-- Cancellation that restores the seats.
-- Users can see and cancel only their own registrations.
-- Input validation, MongoDB query sanitization, Helmet, rate limiting, and centralized error handling.
-- Modular models, controllers, routes, and middleware.
+## Contents
 
-## 2. Requirements
+- [Core capabilities](#core-capabilities)
+- [Technology stack](#technology-stack)
+- [Getting started](#getting-started)
+- [Environment configuration](#environment-configuration)
+- [Run the API](#run-the-api)
+- [Project structure](#project-structure)
+- [API reference](#api-reference)
+- [Booking rules](#booking-rules)
+- [Security notes](#security-notes)
+- [Testing](#testing)
+- [Known scope and next steps](#known-scope-and-next-steps)
 
-- Node.js 18.18 or later (Node.js 20 LTS is a good choice).
+## Core capabilities
+
+- **Authentication:** Register and log in with password hashing using bcryptjs; receive a JWT for authenticated requests.
+- **Role-based authorization:** Separate normal User and Admin permissions. Public registration cannot assign the Admin role.
+- **Event management:** Admins can create, update, and delete events; deletion is blocked while confirmed bookings exist.
+- **Event discovery:** Public upcoming-event listing with search, category filtering, sorting by date, and pagination.
+- **Seat-aware booking:** Validate event availability, prevent duplicate user/event registrations, and reserve seats using a conditional MongoDB update.
+- **Booking management:** Users can view and cancel their own registrations. Cancellation restores the reserved seats.
+- **API safeguards:** Request validation, authentication rate limiting, general API rate limiting, Helmet security headers, MongoDB query sanitization, and centralized error responses.
+
+## Technology stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Runtime | Node.js | Executes server-side JavaScript |
+| Web framework | Express.js | HTTP server, routing, and middleware |
+| Database | MongoDB | Stores users, events, and registrations |
+| ODM | Mongoose | Schemas, validation, queries, and indexes |
+| Authentication | JSON Web Token (JWT) | Authenticates protected API requests |
+| Password security | bcryptjs | Hashes and verifies passwords |
+| Validation | express-validator | Validates request fields |
+| Security | Helmet, express-rate-limit, express-mongo-sanitize | Adds HTTP and request-level protections |
+| API testing | Postman / Thunder Client | Exercises endpoints and verifies responses |
+
+## Getting started
+
+### Prerequisites
+
+- Node.js **18.18 or later** (Node.js 20 LTS is recommended).
 - npm.
-- MongoDB Community Server running locally, or a MongoDB Atlas connection string.
-- Postman or Thunder Client for API testing.
+- A running MongoDB Community Server instance, or a MongoDB Atlas connection string.
+- Postman or Thunder Client for API verification.
 
-## 3. Installation
+### 1. Clone the repository
 
-Open a terminal in the `EventEase` folder:
+```bash
+git clone https://github.com/naitik2043/EventEase.git
+cd EventEase
+```
+
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-If PowerShell blocks `npm` because script execution is disabled, use the Windows command shim:
+On Windows PowerShell, use `npm.cmd` if PowerShell blocks the npm script:
 
 ```powershell
 npm.cmd install
 ```
 
-Create your local environment file by copying `.env.example` to `.env`.
+### 3. Create your local environment file
 
 PowerShell:
 
@@ -46,73 +86,80 @@ PowerShell:
 Copy-Item .env.example .env
 ```
 
-Edit `.env` and set `MONGO_URI` and a long, random `JWT_SECRET`. For local MongoDB, the default URI is:
+macOS/Linux:
 
-```env
-MONGO_URI=mongodb://127.0.0.1:27017/eventease
+```bash
+cp .env.example .env
 ```
 
-Never commit `.env` or share its secrets.
+Open `.env` and add your own configuration. See [Environment configuration](#environment-configuration).
 
-## 4. Start MongoDB
+### 4. Start MongoDB
 
-Make sure your local MongoDB service is running before starting the API. If you use MongoDB Atlas, put your Atlas connection string in `MONGO_URI` instead.
+Make sure your local MongoDB service is running before starting the API. For MongoDB Atlas, use the connection URI supplied by Atlas in `MONGO_URI`.
 
-## 5. Create the first Admin
+### 5. Seed the Admin account
 
-Public registration intentionally creates a normal `User` role. A client cannot send `role: "Admin"` to promote itself.
-
-Set these values in `.env`:
-
-```env
-ADMIN_NAME=EventEase Admin
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=ChooseAStrongPassword123!
-```
-
-Run the seed command once:
+Set `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in your local `.env`, then run:
 
 ```bash
 npm run seed:admin
 ```
 
-PowerShell alternative:
+Windows PowerShell:
 
 ```powershell
 npm.cmd run seed:admin
 ```
 
-The seed command creates the Admin account if it does not exist. If the email already belongs to a registered account, it promotes that account to Admin without changing its password.
+The seed script creates the Admin account when the email is new. When that email already exists, it updates that account's name, role, and password using the values in `.env`. **Running the seed script for an existing account therefore resets its password to the configured `ADMIN_PASSWORD`.**
 
-## 6. Run the server
-
-Development mode (auto-restarts when files change):
+### 6. Start the development server
 
 ```bash
 npm run dev
 ```
 
-PowerShell alternative:
+Windows PowerShell:
 
 ```powershell
 npm.cmd run dev
 ```
 
-Normal mode:
+The API uses port `5000` by default. Open:
 
-```bash
-npm start
+- Health check: `http://localhost:5000/api/health`
+
+Expected health response:
+
+```json
+{
+  "success": true,
+  "message": "EventEase API is running."
+}
 ```
 
-The API runs at `http://localhost:5000` by default.
+For a standard non-development start, run `npm start`.
 
-Health check:
+## Environment configuration
 
-```http
-GET http://localhost:5000/api/health
-```
+The repository includes a safe template at [`.env.example`](.env.example). Copy it to `.env` and configure your own values:
 
-## 7. Project structure
+| Variable | Purpose |
+|---|---|
+| `PORT` | HTTP port; defaults to `5000` |
+| `NODE_ENV` | Runtime environment, such as `development` or `production` |
+| `MONGO_URI` | MongoDB connection string |
+| `JWT_SECRET` | Secret used to sign and verify JWTs |
+| `JWT_EXPIRES_IN` | Token lifetime; defaults to `1d` |
+| `CORS_ORIGIN` | Optional comma-separated allowed frontend origins |
+| `ADMIN_NAME` | Admin display name used by the seed script |
+| `ADMIN_EMAIL` | Admin account email used by the seed script |
+| `ADMIN_PASSWORD` | Admin password used by the seed script |
+
+Use a long, unique, random `JWT_SECRET` and a strong Admin password. Never commit `.env`, production secrets, database credentials, or real access tokens. The empty `CORS_ORIGIN` value is convenient for local practical work; configure explicit trusted origins before deployment.
+
+## Project structure
 
 ```text
 EventEase/
@@ -141,60 +188,62 @@ EventEase/
 │   ├── AppError.js
 │   └── asyncHandler.js
 ├── docs/
-│   └── API_TESTING.md
+│   ├── API_TESTING.md
+│   └── EventEase.postman_collection.json
+├── Result/                       # Project/API evidence screenshots
 ├── .env.example
 ├── .gitignore
 ├── package.json
 └── server.js
 ```
 
-## 8. API reference
+## API reference
 
-Base URL: `http://localhost:5000`
+**Base URL:** `http://localhost:5000`
 
-For protected endpoints, send the token from the login response in the request header:
+Protected routes require the JWT returned by the login endpoint:
 
 ```http
-Authorization: Bearer YOUR_JWT_TOKEN
+Authorization: Bearer <YOUR_JWT_TOKEN>
 ```
 
 ### Authentication
 
-| Method | Endpoint | Access | Purpose |
+| Method | Endpoint | Access | Description |
 |---|---|---|---|
-| POST | `/api/auth/register` | Public | Register a normal user |
-| POST | `/api/auth/login` | Public | Login and receive JWT |
+| `POST` | `/api/auth/register` | Public | Create a normal User account |
+| `POST` | `/api/auth/login` | Public | Authenticate and receive a JWT |
 
-Register body:
+Register request:
 
 ```json
 {
-  "name": "Naitik Gupta",
-  "email": "naitik@example.com",
+  "name": "Demo User",
+  "email": "demo.user@example.com",
   "password": "StrongPass123!"
 }
 ```
 
-Login body:
+Login request:
 
 ```json
 {
-  "email": "naitik@example.com",
+  "email": "demo.user@example.com",
   "password": "StrongPass123!"
 }
 ```
 
 ### Events
 
-| Method | Endpoint | Access | Purpose |
+| Method | Endpoint | Access | Description |
 |---|---|---|---|
-| POST | `/api/events` | Admin | Create an event |
-| GET | `/api/events` | Public | List upcoming events |
-| GET | `/api/events/:id` | Public | Get an event by ID |
-| PUT | `/api/events/:id` | Admin | Update an event |
-| DELETE | `/api/events/:id` | Admin | Delete an event |
+| `GET` | `/api/events` | Public | List upcoming events |
+| `GET` | `/api/events/:id` | Public | Get event details |
+| `POST` | `/api/events` | Admin | Create an event |
+| `PUT` | `/api/events/:id` | Admin | Update an event |
+| `DELETE` | `/api/events/:id` | Admin | Delete an event if it has no confirmed registrations |
 
-Create event body:
+Create-event request:
 
 ```json
 {
@@ -208,9 +257,9 @@ Create event body:
 }
 ```
 
-`availableSeats` is initialized from `totalSeats` by the server. Do not send `createdBy` or `availableSeats`.
+The server initializes `availableSeats` from `totalSeats` and assigns `createdBy` from the authenticated Admin. Clients must not send either field.
 
-Search, filter, and pagination example:
+Search, category filter, and pagination example:
 
 ```http
 GET /api/events?search=web&category=Technology&page=1&limit=10
@@ -218,14 +267,14 @@ GET /api/events?search=web&category=Technology&page=1&limit=10
 
 ### Registrations
 
-| Method | Endpoint | Access | Purpose |
+| Method | Endpoint | Access | Description |
 |---|---|---|---|
-| POST | `/api/registrations` | Logged-in user | Book seats |
-| GET | `/api/registrations/my` | Logged-in user | View own registrations |
-| GET | `/api/registrations/event/:eventId` | Admin | View registrations for an event |
-| PATCH | `/api/registrations/:id/cancel` | Registration owner | Cancel own registration |
+| `POST` | `/api/registrations` | Authenticated User | Book event seats |
+| `GET` | `/api/registrations/my` | Authenticated User | List the current user's registrations |
+| `GET` | `/api/registrations/event/:eventId` | Admin | List registrations for an event |
+| `PATCH` | `/api/registrations/:id/cancel` | Registration owner | Cancel the user's booking |
 
-Create registration body:
+Create-registration request:
 
 ```json
 {
@@ -234,53 +283,44 @@ Create registration body:
 }
 ```
 
-The API calculates `totalAmount` as `registrationFee * numberOfSeats`.
+The server calculates `totalAmount` from the event's registration fee and requested seat count.
 
-## 9. Important business rules
+## Booking rules
 
-1. A public registration always creates a `User`; only the admin seed command creates/promotes an Admin account.
-2. A user can have only one registration record for an event, including after cancelling it. The unique compound index enforces this at the database level.
+1. Public registration always creates a normal `User`; clients cannot self-assign the Admin role.
+2. A user can create only one registration record for a given event. The unique compound index also prevents a second record after cancellation.
 3. Past events cannot be booked.
-4. A booking is confirmed only if enough seats can be atomically reserved.
-5. A user can view and cancel only their own registrations.
-6. On cancellation, the registration status changes to `Cancelled` and the booked seat count is restored.
-7. An event with confirmed registrations cannot be deleted.
-8. When an Admin changes `totalSeats`, the number of already-booked seats is preserved; the new capacity cannot be lower than seats already booked.
+4. Seat availability is checked and decremented by a conditional database update, so concurrent booking attempts cannot reserve more seats than the stored availability.
+5. Users can view and cancel only their own registrations.
+6. Cancelling a confirmed registration restores the reserved seat count.
+7. Events with confirmed registrations cannot be deleted.
+8. When an Admin changes `totalSeats`, already-booked seats are preserved; capacity cannot be reduced below the number of seats already booked.
 
-## 10. API testing and submission evidence
+## Security notes
 
-Read [`docs/API_TESTING.md`](docs/API_TESTING.md) for a suggested Postman/Thunder Client sequence and test cases. Capture screenshots from your own running application showing the method, URL, request body or headers, response body, and status code.
+- `.env` is local-only; `.env.example` contains placeholders and is safe to share.
+- Passwords are hashed with bcryptjs and are excluded from normal User queries.
+- JWT-protected routes load the current user from the database before authorizing the request.
+- Admin-only actions use a separate role-check middleware.
+- Authentication endpoints have a stricter rate limit than the general API.
+- Helmet, request validation, MongoDB query sanitization, and a centralized error handler are enabled.
+- Set `NODE_ENV=production`, configure explicit `CORS_ORIGIN` values, use HTTPS, and rotate secrets appropriately when deploying.
 
-The PDF assessment asks for screenshots covering registration/login, Admin event creation, a normal user's forbidden Admin action, a successful booking, own registrations, duplicate/insufficient-seat failures, missing-token rejection, and cancellation with restored seats.
+## Testing
 
-## 11. Assessment note
+Use the included [Postman collection](docs/EventEase.postman_collection.json) or follow the step-by-step [API testing guide](docs/API_TESTING.md).
 
-This project provides the backend source and API setup. You still need to run it with your own MongoDB instance, verify the endpoints, and capture your own API-testing screenshots. Those screenshots cannot be pre-generated because they must come from your running application.
+The guide covers registration/login, Admin event creation, role authorization, event discovery, successful and failed booking cases, protected-route behavior, cancellation, and seat restoration.
 
-## 12. Security and configuration
+This repository currently provides a manual API-testing workflow; `package.json` does not yet define an automated test script. Capture real request/response screenshots from your own running server for assessment evidence.
 
-- Keep secrets in a local `.env` file; commit only the redacted `.env.example`.
-- Use a strong, unique `JWT_SECRET` for every deployed environment.
-- Do not use the example Admin password in a real environment.
-- Set `NODE_ENV=production` in production so internal error details are not returned to clients.
-- Configure `CORS_ORIGIN` to the exact frontend origin(s) before deployment; the permissive default is intended for local practical work.
-- Use HTTPS in production and keep Node.js and dependencies updated.
+## Known scope and next steps
 
-## 13. Current scope and limitations
+- This repository contains the **backend API**; a separate frontend application is not included.
+- Booking creation and seat reservation use a unique registration index, an atomic conditional seat update, and compensating cleanup. They are **not implemented as a multi-document MongoDB transaction**.
+- The Postman collection is a starter workflow and should be run against your own local database.
+- Potential next steps: automated integration tests, CI checks, structured logging, monitoring, OpenAPI documentation, and a frontend client.
 
-- This repository contains the backend/API; it does not include a separate React or other web frontend.
-- The API uses a MongoDB connection configured through `MONGO_URI`.
-- Booking capacity is reserved with an atomic conditional update. The registration record and seat update are coordinated with compensating cleanup, not a multi-document MongoDB transaction.
-- The Postman collection is a starter test workflow. Run the requests against your local database and replace sample data where needed.
+## License
 
-## 14. Roadmap
-
-- Add automated integration tests for authentication, role permissions, booking concurrency, and cancellation.
-- Add CI checks for linting and tests on pull requests.
-- Add structured request logging and production monitoring.
-- Add API versioning and generated OpenAPI documentation.
-- Add a frontend client when the UI is developed.
-
-## 15. License
-
-No open-source license is currently declared for this repository. Unless a license is added, the source remains under the default copyright terms.
+No standalone open-source `LICENSE` file is included in this repository. All rights remain with the author unless a license is added.
