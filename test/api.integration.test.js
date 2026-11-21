@@ -70,6 +70,12 @@ integrationTest(
     });
 
     await t.test('runs as an API-only service and serves interactive API documentation', async () => {
+      const readiness = await fetch(`${baseUrl}/api/health/ready`);
+      assert.equal(readiness.status, 200);
+      const readinessBody = await readiness.json();
+      assert.equal(readinessBody.status, 'ready');
+      assert.equal(readinessBody.checks.database, 'connected');
+
       const home = await fetch(baseUrl);
       assert.equal(home.status, 404);
       const homeBody = await home.json();
@@ -89,6 +95,7 @@ integrationTest(
       const spec = await openapi.json();
       assert.equal(spec.openapi, '3.0.3');
       assert.ok(spec.paths['/api/registrations/waitlist']);
+      assert.ok(spec.paths['/api/health/ready']);
     });
 
     const adminEmail = 'integration.admin@example.com';
