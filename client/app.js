@@ -138,7 +138,7 @@ function renderEventCard(event, index = 0) {
         <h3>${escapeHtml(event.eventName)}</h3>
         <p class="event-description">${escapeHtml(event.description || 'A chance to learn, connect and experience something new.')}</p>
         <div class="event-venue">⌖ ${escapeHtml(event.venue)}</div>
-        <div class="event-card-footer"><div class="event-price"><strong>${money(event.registrationFee)}</strong><span>/ seat</span></div><button class="button button-dark button-small" data-action="book" data-id="${event._id}">${availability ? 'Reserve seat ↗' : 'Join waitlist ↗'}</button></div>
+        <div class="event-card-footer"><div class="event-price"><strong>${money(event.registrationFee)}</strong><span>/ seat</span></div><select class="event-seat-picker" data-seat-count aria-label="Number of seats">${Array.from({ length: Math.min(20, Math.max(1, event.totalSeats || 1)) }, (_, index) => `<option value="${index + 1}">${index + 1}</option>`).join('')}</select><button class="button button-dark button-small" data-action="book" data-id="${event._id}">${availability ? 'Reserve ↗' : 'Waitlist ↗'}</button></div>
       </div>
     </article>
   `;
