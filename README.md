@@ -6,6 +6,10 @@ EventEase is a role-based event management platform for discovering events, rese
 
 The project combines a responsive browser dashboard with a modular **Node.js, Express.js, MongoDB and Mongoose** API. It focuses on real backend engineering concerns such as transactional seat reservations, FIFO waitlist promotion, JWT authorization, API validation, automated tests, deployment configuration and operational visibility.
 
+**Live frontend:** [eventease-topaz-five.vercel.app](https://eventease-topaz-five.vercel.app) · **Interactive API docs:** [Swagger UI](https://eventease-topaz-five.vercel.app/docs.html)
+
+> Deployment note: the Vercel production frontend is deployed. The API needs a MongoDB replica-set connection named MONGO_URI before authentication, event data and booking workflows can operate.
+
 <p align="center">
   <a href="https://github.com/naitik2043/EventEase/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/naitik2043/EventEase/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Node.js" src="https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white">
