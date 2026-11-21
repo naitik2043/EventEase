@@ -60,6 +60,14 @@ jobs:
       - name: Validate application syntax
         run: npm run build
 
+      - name: Validate Docker Compose configuration
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+
+      - name: Build production Docker image
+        run: docker build --tag eventease:ci .
+
       - name: Run unit and integration tests
         run: npm test
 
