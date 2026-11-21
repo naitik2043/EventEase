@@ -139,7 +139,8 @@ EventEase/
 │   ├── docs-initializer.js
 │   └── openapi.json
 ├── config/
-│   └── db.js
+│   ├── db.js
+│   └── runtime.js
 ├── controllers/
 │   ├── analyticsController.js
 │   ├── authController.js
@@ -253,7 +254,7 @@ npm run seed:admin
 npm run dev
 ```
 
-The Express server serves the API and docs. For the static browser UI, serve the client directory from a local static server or use the included Docker Compose environment.
+The Express server serves the API, docs, and browser dashboard from the same origin at http://localhost:5000.
 
 ## Environment variables
 
@@ -297,6 +298,7 @@ Authorization: Bearer <JWT>
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
 | GET | /api/events | Public | Search/filter/paginate upcoming events |
+| GET | /api/events/admin/all | Admin | Paginated catalogue including past events |
 | GET | /api/events/:id | Public | Event details |
 | POST | /api/events | Admin | Create event |
 | PUT | /api/events/:id | Admin | Update event |
@@ -320,6 +322,7 @@ Authorization: Bearer <JWT>
 |---|---|---|---|
 | POST | /api/registrations/waitlist | User | Join FIFO waitlist |
 | GET | /api/registrations/waitlist/my | User | View own waitlist requests |
+| DELETE | /api/registrations/waitlist/:id | Owner | Leave a waiting queue position |
 | GET | /api/registrations/event/:eventId/waitlist | Admin | View event waitlist queue |
 | GET | /api/analytics/overview | Admin | Platform-wide metrics |
 
