@@ -2,7 +2,7 @@
 
 ## Product overview
 
-EventEase is a full-stack event management platform. The frontend is a responsive static web client; the backend is a layered Express REST API backed by MongoDB.
+EventEase is a full-stack event management platform. The frontend is a component-based React application built with Vite; the backend is a layered Express REST API backed by MongoDB.
 
 ```text
              Browser / Responsive UI
@@ -32,7 +32,9 @@ EventEase is a full-stack event management platform. The frontend is a responsiv
 
 | Path | Responsibility |
 |---|---|
-| client/ | Responsive attendee and Admin dashboards, API client, and Swagger UI |
+| frontend/src/ | React attendee and Admin dashboards, API client, reusable UI components |
+| frontend/public/ | Static Swagger UI assets and OpenAPI contract |
+| frontend/vite.config.js | Vite development proxy and production build configuration |
 | api/[...slug].js | Serverless adapter for the Express application |
 | app.js | Configures Express middleware, docs, health check and route mounts |
 | server.js | Local Node.js entry point, production config validation and graceful shutdown |
