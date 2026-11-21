@@ -45,7 +45,6 @@ async function sendEmail({ to, subject, text }) {
 export async function sendBookingConfirmation({ user, event, registration }) {
   if (!user?.email || !event) return { sent: false, reason: 'Recipient or event missing.' };
 
-  const appUrl = (process.env.APP_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
   const text = [
     `Hello ${user.name || 'there'},`,
     '',
@@ -55,8 +54,6 @@ export async function sendBookingConfirmation({ user, event, registration }) {
     `Seats: ${registration.numberOfSeats}`,
     `Booking reference: ${registration._id}`,
     `Ticket code: ${registration.ticketCode}`,
-    '',
-    `Open your EventEase dashboard: ${appUrl}`,
     '',
     'Please keep your ticket code available for event check-in.',
     'EventEase'
@@ -74,7 +71,6 @@ export async function sendWaitlistPromotion({ user, event, registration }) {
     return { sent: false, reason: 'Recipient, event, or registration missing.' };
   }
 
-  const appUrl = (process.env.APP_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
   const text = [
     `Hello ${user.name || 'there'},`,
     '',
@@ -83,8 +79,6 @@ export async function sendWaitlistPromotion({ user, event, registration }) {
     `Event date: ${new Date(event.eventDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
     `Seats: ${registration.numberOfSeats}`,
     `Ticket code: ${registration.ticketCode}`,
-    '',
-    `Open your EventEase dashboard: ${appUrl}`,
     '',
     'Your registration is now confirmed.',
     'EventEase'

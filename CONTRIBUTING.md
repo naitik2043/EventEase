@@ -36,7 +36,7 @@ For the complete suite, configure an isolated MongoDB replica set and set MONGO_
 npm test
 ```
 
-Also verify affected endpoints using the Postman collection or Swagger UI, review git diff, and ensure no secrets are staged.
+Also verify affected endpoints using the Postman collection or Swagger UI, review git diff, and ensure no secrets are staged. This repository is backend-only; do not add browser UI or frontend build artifacts to the API service.
 
 ## Commit messages
 
