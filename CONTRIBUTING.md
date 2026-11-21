@@ -4,7 +4,7 @@ Thank you for considering a contribution.
 
 ## Development setup
 
-1. Use Node.js 22 or a later supported LTS release.
+1. Use Node.js 22.12+ or Node.js 24 (the supported runtime range in package.json).
 2. Start a MongoDB replica set. Transactions are required by booking and cancellation.
 3. Copy .env.example to .env and configure local values.
 4. Install dependencies with npm ci.
