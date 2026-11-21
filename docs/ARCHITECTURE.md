@@ -91,4 +91,4 @@ Booking, cancellation, and event deletion use multi-document transactions. The d
 
 ## API and frontend documentation
 
-The OpenAPI 3.0.3 contract is stored in docs/openapi.json and copied to client/openapi.json for static Swagger UI. Locally, API docs are available at /api-docs; on the static frontend, open /docs.html.
+The OpenAPI 3.0.3 contract is stored in docs/openapi.json and copied to frontend/public/openapi.json for the static Swagger UI page. Locally, API docs are available at /api-docs; on the static frontend, open /docs.html.
