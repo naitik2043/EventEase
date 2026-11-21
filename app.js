@@ -15,7 +15,9 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import requestLogger from './middleware/requestLogger.js';
 
 const app = express();
-const docsDirectory = path.join(path.dirname(fileURLToPath(import.meta.url)), 'docs');
+const appDirectory = path.dirname(fileURLToPath(import.meta.url));
+const docsDirectory = path.join(appDirectory, 'docs');
+const clientDirectory = path.join(appDirectory, 'client');
 
 app.disable('x-powered-by');
 app.use(requestLogger);
@@ -96,6 +98,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/analytics', analyticsRoutes);
+
+// Serve the browser application from the same origin in local Docker/Node deployments.
+app.use(express.static(clientDirectory, {
+  index: 'index.html',
+  fallthrough: true,
+  maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0
+}));
 
 app.use(notFound);
 app.use(errorHandler);
