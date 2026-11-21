@@ -17,7 +17,7 @@ import requestLogger from './middleware/requestLogger.js';
 const app = express();
 const appDirectory = path.dirname(fileURLToPath(import.meta.url));
 const docsDirectory = path.join(appDirectory, 'docs');
-const clientDirectory = path.join(appDirectory, 'client');
+const clientDirectory = path.join(appDirectory, 'frontend', 'dist');
 
 app.disable('x-powered-by');
 app.use(requestLogger);
