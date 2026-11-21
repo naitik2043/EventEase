@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import app from '../app.js';
 import { connectDB } from '../config/db.js';
+import { assertProductionEnvironment } from '../config/runtime.js';
 import { log } from '../utils/logger.js';
 
 /**
@@ -9,6 +10,7 @@ import { log } from '../utils/logger.js';
  */
 export default async function eventEaseApi(req, res) {
   try {
+    assertProductionEnvironment();
     await connectDB();
     return app(req, res);
   } catch (error) {
