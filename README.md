@@ -7,7 +7,6 @@ EventEase is a backend service for event discovery, attendee registration, seat 
 This repository intentionally contains the API and its supporting backend infrastructure only. It does not include a React application, browser dashboard, static website, or Vercel frontend deployment.
 
 <p align="center">
-  <a href="https://github.com/naitik2043/EventEase/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/naitik2043/EventEase/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Node.js" src="https://img.shields.io/badge/Node.js-22%20%7C%2024-339933?logo=nodedotjs&logoColor=white">
   <img alt="Express" src="https://img.shields.io/badge/Express-4.x-000000?logo=express&logoColor=white">
   <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-Replica%20Set-47A248?logo=mongodb&logoColor=white">
@@ -37,21 +36,17 @@ This repository intentionally contains the API and its supporting backend infras
 ## Engineering highlights
 
 ### Transactional bookings
-
 A booking creates a Registration and decrements Event.availableSeats inside a MongoDB transaction. Capacity is updated conditionally so concurrent requests cannot reserve more seats than are available. A unique compound index prevents duplicate registrations for the same attendee and event.
 
 Cancellation changes the registration state and restores seats in a transaction. Historical registration data is retained.
 
 ### FIFO waitlist
-
 Waitlist entries are processed in queue order. When capacity becomes available, the oldest eligible entry is promoted, and the registration plus seat reservation are committed transactionally. The queue does not skip an older request simply because a later, smaller party would fit.
 
 ### QR tickets and check-in
-
 Confirmed registrations receive cryptographically random opaque ticket codes. An authenticated Admin can validate a code and mark the attendee checked in. Cancelled tickets and repeat check-ins are rejected.
 
 ### API security
-
 - JWT authentication and server-enforced User/Admin authorization.
 - bcryptjs password hashing.
 - express-validator request validation.
@@ -110,13 +105,7 @@ For the module breakdown and request lifecycle, see [docs/ARCHITECTURE.md](docs/
 ```text
 EventEase/
 ├── config/
-│   ├── db.js
-│   └── runtime.js
 ├── controllers/
-│   ├── analyticsController.js
-│   ├── authController.js
-│   ├── eventController.js
-│   └── registrationController.js
 ├── docs/
 │   ├── API_TESTING.md
 │   ├── ARCHITECTURE.md
@@ -126,20 +115,9 @@ EventEase/
 │   └── swagger-initializer.js
 ├── middleware/
 ├── models/
-│   ├── Event.js
-│   ├── Registration.js
-│   ├── User.js
-│   └── Waitlist.js
 ├── routes/
-│   ├── analyticsRoutes.js
-│   ├── authRoutes.js
-│   ├── eventRoutes.js
-│   └── registrationRoutes.js
 ├── scripts/
-│   ├── checkSyntax.js
-│   └── seedAdmin.js
 ├── services/
-│   └── emailService.js
 ├── test/
 ├── utils/
 ├── docker/
@@ -154,7 +132,6 @@ EventEase/
 ```
 
 ## Prerequisites
-
 - Node.js 22.12+ or Node.js 24.
 - npm.
 - MongoDB running as a replica set (transactions are required).
@@ -196,7 +173,6 @@ docker compose exec api npm run seed:admin
 ```
 
 The backend is available at:
-
 - Health endpoint: http://localhost:5000/api/health
 - Swagger UI: http://localhost:5000/api-docs
 - OpenAPI JSON: http://localhost:5000/api-docs/openapi.json
@@ -309,7 +285,6 @@ Authorization: Bearer <JWT>
 | GET | `/api/analytics/overview` | Admin | Platform-wide analytics |
 
 ## API documentation
-
 - Swagger UI: `/api-docs`
 - OpenAPI JSON: `/api-docs/openapi.json`
 - Source contract: [docs/openapi.json](docs/openapi.json)
@@ -351,7 +326,6 @@ For manual endpoint verification and concurrency scenarios, see [docs/API_TESTIN
 This repository is an Express API service. It can run as a Node.js process or as the included Docker container on a backend hosting provider.
 
 The application requires:
-
 - A MongoDB replica set or supported sharded cluster.
 - A unique production `JWT_SECRET`.
 - An explicit `CORS_ORIGIN` allowlist when browser clients are used.
@@ -360,18 +334,15 @@ The application requires:
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production configuration. This repository no longer contains a frontend build or Vercel deployment adapter.
 
 ## Scope
-
 - No React, Vite, browser UI, or frontend source is included.
 - No payment capture or settlement is implemented. Revenue analytics represent confirmed booking value.
 - Email notifications are optional and best-effort.
 - MongoDB transactions require a replica set; the included single-node Docker replica set is for local development only.
 
 ## License
-
 Distributed under the MIT License. See [LICENSE](LICENSE).
 
 ## Author
-
 **Naitik Gupta**
 
 - GitHub: [@naitik2043](https://github.com/naitik2043)
