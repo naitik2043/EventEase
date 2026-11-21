@@ -115,6 +115,8 @@ EventEase/
 │   ├── authController.js
 │   ├── eventController.js
 │   └── registrationController.js
+├── Result/
+│   └── API verification screenshots/
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── API_TESTING.md
@@ -150,6 +152,7 @@ EventEase/
 │   └── logger.js
 ├── .github/
 │   ├── dependabot.yml
+│   ├── pull_request_template.md
 │   └── workflows/
 │       ├── ci.yml
 │       └── codeql.yml
@@ -320,6 +323,16 @@ GET /api/events?search=workshop&category=Technology&page=1&limit=10
 ### Interactive API documentation
 
 Swagger UI is served at /api-docs. The versioned API contract is maintained in [docs/openapi.json](docs/openapi.json).
+
+### API verification evidence
+
+The repository also retains example screenshots from the original manual API verification workflow:
+
+- [API health check](<Result/GET HEALT.png>)
+- [MongoDB connection](Result/MONGODB.png)
+- [Admin event creation](Result/POST-Admin_Create_Event.png)
+- [User login](<Result/POST-USer login .png>)
+- [User registration](Result/User-register.png)
 
 ## Data model
 
