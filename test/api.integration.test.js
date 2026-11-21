@@ -6,6 +6,7 @@ import app from '../app.js';
 import User from '../models/User.js';
 import Event from '../models/Event.js';
 import Registration from '../models/Registration.js';
+import Waitlist from '../models/Waitlist.js';
 
 const mongoTestUri = process.env.MONGO_TEST_URI;
 const integrationTest = mongoTestUri ? test : test.skip;
@@ -23,12 +24,13 @@ integrationTest(
     );
 
     await mongoose.connect(mongoTestUri, { serverSelectionTimeoutMS: 15000 });
-    await Promise.all([User.init(), Event.init(), Registration.init()]);
+    await Promise.all([User.init(), Event.init(), Registration.init(), Waitlist.init()]);
 
     await Promise.all([
       User.deleteMany({}),
       Event.deleteMany({}),
-      Registration.deleteMany({})
+      Registration.deleteMany({}),
+      Waitlist.deleteMany({})
     ]);
 
     const server = app.listen(0);
@@ -61,7 +63,8 @@ integrationTest(
       await Promise.all([
         User.deleteMany({}),
         Event.deleteMany({}),
-        Registration.deleteMany({})
+        Registration.deleteMany({}),
+        Waitlist.deleteMany({})
       ]);
       await mongoose.disconnect();
     });
@@ -182,6 +185,18 @@ integrationTest(
       assert.equal(event.availableSeats, 8);
     });
 
+
+    await t.test('booking owner can retrieve an opaque QR ticket', async () => {
+      const response = await request(`/api/registrations/${registrationId}/ticket`, {
+        token: userToken
+      });
+
+      assert.equal(response.status, 200);
+      assert.equal(response.body.ticket.ticketCode.length, 48);
+      assert.match(response.body.ticket.qrPayload, /^EVENTEASE:TICKET:/);
+      assert.match(response.body.ticket.qrImageUrl, /^https:\/\/api\.qrserver\.com\//);
+    });
+
     await t.test('duplicate registration is rejected', async () => {
       const response = await request('/api/registrations', {
         method: 'POST',
@@ -246,6 +261,118 @@ integrationTest(
       const event = await Event.findById(limitedEventId);
       assert.equal(event.availableSeats, 1);
       assert.equal(await Registration.countDocuments({ eventId: limitedEventId }), 0);
+    });
+
+
+    await t.test('waitlist entries are promoted in FIFO order when seats are released', async () => {
+      const secondUser = await User.create({
+        name: 'Waitlist Attendee',
+        email: 'waitlist.attendee@example.com',
+        password: 'WaitlistPass123!',
+        role: 'User'
+      });
+
+      const secondLogin = await request('/api/auth/login', {
+        method: 'POST',
+        body: { email: secondUser.email, password: 'WaitlistPass123!' }
+      });
+      assert.equal(secondLogin.status, 200);
+      const secondToken = secondLogin.body.token;
+
+      const created = await request('/api/events', {
+        method: 'POST',
+        token: adminToken,
+        body: {
+          eventName: 'Waitlist Promotion Workshop',
+          category: 'Technology',
+          eventDate: new Date(Date.now() + 70 * 86400000).toISOString(),
+          venue: 'Queue Test Hall',
+          totalSeats: 1,
+          registrationFee: 90
+        }
+      });
+      assert.equal(created.status, 201);
+      const waitlistEventId = created.body.event._id;
+
+      const firstBooking = await request('/api/registrations', {
+        method: 'POST',
+        token: userToken,
+        body: { eventId: waitlistEventId, numberOfSeats: 1 }
+      });
+      assert.equal(firstBooking.status, 201);
+      const firstRegistrationId = firstBooking.body.registration._id;
+
+      const queueEntry = await request('/api/registrations/waitlist', {
+        method: 'POST',
+        token: secondToken,
+        body: { eventId: waitlistEventId, numberOfSeats: 1 }
+      });
+      assert.equal(queueEntry.status, 201);
+      assert.equal(queueEntry.body.waitlistEntry.status, 'Waiting');
+
+      const cancellation = await request(
+        `/api/registrations/${firstRegistrationId}/cancel`,
+        { method: 'PATCH', token: userToken }
+      );
+      assert.equal(cancellation.status, 200);
+      assert.equal(cancellation.body.promotedFromWaitlist, 1);
+      assert.equal(cancellation.body.availableSeats, 0);
+
+      const myQueue = await request('/api/registrations/waitlist/my', {
+        token: secondToken
+      });
+      assert.equal(myQueue.status, 200);
+      assert.equal(myQueue.body.waitlist[0].status, 'Promoted');
+
+      const myBookings = await request('/api/registrations/my', {
+        token: secondToken
+      });
+      assert.equal(myBookings.status, 200);
+      assert.equal(myBookings.body.registrations.length, 1);
+      assert.equal(myBookings.body.registrations[0].registrationStatus, 'Confirmed');
+
+      const ticket = await request(
+        `/api/registrations/${myBookings.body.registrations[0]._id}/ticket`,
+        { token: secondToken }
+      );
+      assert.equal(ticket.status, 200);
+
+      const checkIn = await request('/api/registrations/check-in', {
+        method: 'POST',
+        token: adminToken,
+        body: { ticketCode: ticket.body.ticket.ticketCode }
+      });
+      assert.equal(checkIn.status, 200);
+      assert.ok(checkIn.body.checkIn.checkedInAt);
+
+      const duplicateCheckIn = await request('/api/registrations/check-in', {
+        method: 'POST',
+        token: adminToken,
+        body: { ticketCode: ticket.body.ticket.ticketCode }
+      });
+      assert.equal(duplicateCheckIn.status, 409);
+
+      const analytics = await request(`/api/events/${waitlistEventId}/analytics`, {
+        token: adminToken
+      });
+      assert.equal(analytics.status, 200);
+      assert.equal(analytics.body.analytics.registrations, 1);
+      assert.equal(analytics.body.analytics.checkIns, 1);
+      assert.equal(analytics.body.analytics.occupancyRate, 100);
+
+      const queueForAdmin = await request(
+        `/api/registrations/event/${waitlistEventId}/waitlist`,
+        { token: adminToken }
+      );
+      assert.equal(queueForAdmin.status, 200);
+      assert.equal(queueForAdmin.body.results, 0);
+
+      const overview = await request('/api/analytics/overview', {
+        token: adminToken
+      });
+      assert.equal(overview.status, 200);
+      assert.ok(overview.body.metrics.totalUsers >= 3);
+      assert.ok(overview.body.metrics.confirmedRegistrations >= 1);
     });
 
     await t.test('concurrent users cannot book more seats than event capacity', async () => {
