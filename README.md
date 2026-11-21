@@ -369,7 +369,7 @@ For local integration tests, set MONGO_TEST_URI to an isolated replica-set datab
 MONGO_TEST_URI="mongodb://127.0.0.1:27017/eventease_test?replicaSet=rs0" npm test
 ```
 
-The GitHub Actions workflow provisions a disposable MongoDB replica set and tests on Node.js 22, 24 and 26. The suite covers authentication, role enforcement, event creation, booking, duplicate protection, cancellation and seat restoration, insufficient capacity, concurrent bookings, waitlist promotion, ticket check-in and analytics.
+The GitHub Actions workflow provisions a disposable MongoDB replica set, builds the React/Vite app, validates Docker Compose and builds the production image. The matrix runs on Node.js 22 and 24. The suite covers authentication, role enforcement, event creation, booking, duplicate protection, cancellation and seat restoration, insufficient capacity, concurrent bookings, waitlist promotion, ticket check-in and analytics.
 
 See [docs/API_TESTING.md](docs/API_TESTING.md) for manual verification and additional production test cases.
 
