@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
@@ -57,6 +58,19 @@ app.use('/api', rateLimit({
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests. Please try again later.' }
 }));
+
+app.get('/api/health/ready', (_req, res) => {
+  const databaseReady = mongoose.connection.readyState === 1;
+
+  res.status(databaseReady ? 200 : 503).json({
+    success: databaseReady,
+    status: databaseReady ? 'ready' : 'not_ready',
+    checks: {
+      database: databaseReady ? 'connected' : 'disconnected'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
 
 app.get('/api/health', (_req, res) => {
   res.status(200).json({
