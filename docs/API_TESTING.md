@@ -13,7 +13,6 @@ Authorization: Bearer <JWT>
 ```
 
 ## Manual API verification flow
-
 1. Start EventEase with a MongoDB replica set and seed an Admin.
 2. Verify GET /api/health returns HTTP 200.
 3. Register a normal user using POST /api/auth/register.
@@ -67,7 +66,6 @@ MONGO_TEST_URI="mongodb://127.0.0.1:27017/eventease_test?replicaSet=rs0" npm tes
 The GitHub Actions workflow provisions a disposable MongoDB replica set, validates backend JavaScript, checks Docker Compose configuration, builds the production API image, and runs the API tests on Node.js 22 and 24.
 
 ## Important additional test scenarios
-
 Before production release, extend or perform load tests for:
 - Simultaneous booking when remaining capacity is smaller than an incoming request burst.
 - Simultaneous cancellations and FIFO waitlist promotion.
@@ -77,5 +75,4 @@ Before production release, extend or perform load tests for:
 - Email provider timeouts and rejected sender configuration.
 
 ## Evidence screenshots
-
 Capture real API requests from Postman or Swagger UI. Show the method, endpoint, sanitized request body, response body and HTTP status. Never include JWTs, passwords, private keys, database connection strings or real user email addresses in public screenshots.
