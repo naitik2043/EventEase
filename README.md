@@ -4,7 +4,7 @@
 
 EventEase is a backend service for event discovery, attendee registration, seat reservations, QR ticketing, waitlist management, event check-in, and administrative analytics. It is built with **Node.js, Express.js, MongoDB, and Mongoose**.
 
-This repository intentionally contains the API and its supporting backend infrastructure only. It does not include a React application, browser dashboard, static website, or Vercel frontend deployment.
+This repository intentionally contains the API and its supporting backend infrastructure only. It does not include a React application, browser dashboard, static website, or frontend deployment.
 
 <p align="center">
   <img alt="Node.js" src="https://img.shields.io/badge/Node.js-22%20%7C%2024-339933?logo=nodedotjs&logoColor=white">
@@ -41,7 +41,7 @@ A booking creates a Registration and decrements Event.availableSeats inside a Mo
 Cancellation changes the registration state and restores seats in a transaction. Historical registration data is retained.
 
 ### FIFO waitlist
-Waitlist entries are processed in queue order. When capacity becomes available, the oldest eligible entry is promoted, and the registration plus seat reservation are committed transactionally. The queue does not skip an older request simply because a later, smaller party would fit.
+Waitlist entries are processed in queue order. When capacity becomes available, the oldest eligible entry is promoted, and the registration plus seat reservation are committed transactionally. Queue order is preserved.
 
 ### QR tickets and check-in
 Confirmed registrations receive cryptographically random opaque ticket codes. An authenticated Admin can validate a code and mark the attendee checked in. Cancelled tickets and repeat check-ins are rejected.
@@ -54,7 +54,7 @@ Confirmed registrations receive cryptographically random opaque ticket codes. An
 - Rate limiting and MongoDB query sanitization.
 - Request IDs and structured JSON logs.
 - Production checks for JWT secret and CORS configuration.
-- Graceful shutdown for the local Node.js server.
+- Graceful shutdown for the Node.js server.
 
 ## Technology stack
 
@@ -132,6 +132,7 @@ EventEase/
 ```
 
 ## Prerequisites
+
 - Node.js 22.12+ or Node.js 24.
 - npm.
 - MongoDB running as a replica set (transactions are required).
@@ -158,7 +159,7 @@ On Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
-3. Update `.env` with a unique JWT secret and local Admin seed credentials. The included Docker Compose file provisions a one-node MongoDB replica set for development.
+3. Update `.env` with a unique JWT secret and local Admin seed credentials. Docker Compose provisions a one-node MongoDB replica set for development.
 
 4. Start the API and database:
 
@@ -173,13 +174,14 @@ docker compose exec api npm run seed:admin
 ```
 
 The backend is available at:
+
 - Health endpoint: http://localhost:5000/api/health
 - Swagger UI: http://localhost:5000/api-docs
 - OpenAPI JSON: http://localhost:5000/api-docs/openapi.json
 
 The root path `/` intentionally returns an API 404 response. There is no website or frontend in this repository.
 
-Stop the containers with `docker compose down`. To delete the local database volume as well, use `docker compose down -v` (this permanently removes local MongoDB data).
+Stop containers with `docker compose down`. To remove the local database volume as well, use `docker compose down -v` (this permanently removes local MongoDB data).
 
 ## Run locally without Docker
 
@@ -285,6 +287,7 @@ Authorization: Bearer <JWT>
 | GET | `/api/analytics/overview` | Admin | Platform-wide analytics |
 
 ## API documentation
+
 - Swagger UI: `/api-docs`
 - OpenAPI JSON: `/api-docs/openapi.json`
 - Source contract: [docs/openapi.json](docs/openapi.json)
@@ -317,7 +320,7 @@ The HTTP integration suite requires a dedicated MongoDB replica set. The databas
 MONGO_TEST_URI="mongodb://127.0.0.1:27017/eventease_test?replicaSet=rs0" npm test
 ```
 
-GitHub Actions runs the backend syntax checks, MongoDB-backed integration tests, Docker Compose validation and production Docker image build on Node.js 22 and 24.
+GitHub Actions runs backend syntax checks, MongoDB-backed integration tests, Docker Compose validation and production Docker image build on Node.js 22 and 24.
 
 For manual endpoint verification and concurrency scenarios, see [docs/API_TESTING.md](docs/API_TESTING.md).
 
@@ -326,23 +329,27 @@ For manual endpoint verification and concurrency scenarios, see [docs/API_TESTIN
 This repository is an Express API service. It can run as a Node.js process or as the included Docker container on a backend hosting provider.
 
 The application requires:
+
 - A MongoDB replica set or supported sharded cluster.
 - A unique production `JWT_SECRET`.
 - An explicit `CORS_ORIGIN` allowlist when browser clients are used.
 - HTTPS and restricted database network access.
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production configuration. This repository no longer contains a frontend build or Vercel deployment adapter.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production configuration. This repository contains no frontend build or Vercel frontend adapter.
 
 ## Scope
+
 - No React, Vite, browser UI, or frontend source is included.
 - No payment capture or settlement is implemented. Revenue analytics represent confirmed booking value.
 - Email notifications are optional and best-effort.
 - MongoDB transactions require a replica set; the included single-node Docker replica set is for local development only.
 
 ## License
+
 Distributed under the MIT License. See [LICENSE](LICENSE).
 
 ## Author
+
 **Naitik Gupta**
 
 - GitHub: [@naitik2043](https://github.com/naitik2043)
