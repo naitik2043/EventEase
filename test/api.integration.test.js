@@ -76,8 +76,13 @@ integrationTest(
       assert.equal(readinessBody.status, 'ready');
       assert.equal(readinessBody.checks.database, 'connected');
 
+      const liveness = await fetch(`${baseUrl}/api/health`);
+      assert.equal(liveness.status, 200);
+
       const home = await fetch(baseUrl);
       assert.equal(home.status, 404);
+      assert.equal(home.headers.get('x-powered-by'), null);
+      assert.equal(home.headers.get('x-content-type-options'), 'nosniff');
       const homeBody = await home.json();
       assert.equal(homeBody.success, false);
 
