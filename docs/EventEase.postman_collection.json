@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "EventEase Backend API",
-    "description": "Starter collection for the EventEase FSD practical. Create an Admin account with npm run seed:admin before using Admin endpoints.",
+    "description": "Postman collection for the EventEase backend REST API. Configure baseUrl, adminEmail and adminPassword in your local Postman environment. Create an Admin account through the trusted seed script before calling Admin-only endpoints.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -32,6 +32,18 @@
     {
       "key": "ticketCode",
       "value": ""
+    },
+    {
+      "key": "adminEmail",
+      "value": "",
+      "type": "string",
+      "description": "Set this to ADMIN_EMAIL from your private local environment; do not commit real credentials."
+    },
+    {
+      "key": "adminPassword",
+      "value": "",
+      "type": "string",
+      "description": "Set this to ADMIN_PASSWORD from your private local environment; do not commit real credentials."
     }
   ],
   "item": [
@@ -169,10 +181,10 @@
                 "login"
               ]
             },
-            "description": "",
+            "description": "Before sending, set the adminEmail and adminPassword collection variables in your private Postman environment. Do not store production credentials in a shared collection.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"ChangeThisAdminPassword123!\"\n}",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
