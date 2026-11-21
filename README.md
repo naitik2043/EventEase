@@ -1,179 +1,134 @@
-# EventEase — Event Registration & Management API
+# EventEase
 
-A role-based REST API for managing events and attendee bookings, built with **Node.js, Express.js, MongoDB, and Mongoose**.
+### Event Management & Registration REST API
 
-EventEase supports public event discovery, secure user authentication, Admin-managed events, seat-aware registrations, booking cancellation, and an API testing workflow.
+A modular, role-based REST API for event discovery, administration, and seat-aware attendee registration, built with **Node.js, Express.js, MongoDB, and Mongoose**.
+
+EventEase demonstrates layered backend architecture, JWT authentication, role-based authorization, transactional booking workflows, request validation, operational safeguards, interactive API documentation, automated testing, and containerized local development.
 
 <p align="center">
-  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-18.18%2B-339933?logo=nodedotjs&logoColor=white">
-  <img alt="Express" src="https://img.shields.io/badge/Express.js-4.x-000000?logo=express&logoColor=white">
-  <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white">
-  <img alt="API" src="https://img.shields.io/badge/Architecture-REST%20API-blue">
-  <img alt="License" src="https://img.shields.io/badge/License-Not%20Declared-lightgrey">
+  <a href="https://github.com/naitik2043/EventEase/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/naitik2043/EventEase/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white">
+  <img alt="Express" src="https://img.shields.io/badge/Express-4.x-000000?logo=express&logoColor=white">
+  <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-Replica%20Set-47A248?logo=mongodb&logoColor=white">
+  <img alt="OpenAPI" src="https://img.shields.io/badge/OpenAPI-3.0.3-6BA539?logo=swagger&logoColor=white">
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-blue.svg">
 </p>
 
-## Contents
+---
 
-- [Core capabilities](#core-capabilities)
-- [Technology stack](#technology-stack)
-- [Getting started](#getting-started)
-- [Environment configuration](#environment-configuration)
-- [Run the API](#run-the-api)
-- [Project structure](#project-structure)
-- [API reference](#api-reference)
-- [Booking rules](#booking-rules)
-- [Security notes](#security-notes)
-- [Testing](#testing)
-- [Project documentation](#project-documentation)
-- [Known scope and next steps](#known-scope-and-next-steps)
+## Project at a glance
+
+| Area | Details |
+|---|---|
+| Application | Event management and attendee registration API |
+| Architecture | Layered Express application |
+| Runtime | Node.js 22+ (supported LTS releases) |
+| API framework | Express.js 4 |
+| Database | MongoDB replica set |
+| Data modeling | Mongoose |
+| Authentication | JWT |
+| Password hashing | bcryptjs |
+| Validation | express-validator |
+| API specification | OpenAPI 3.0.3 / Swagger UI |
+| Testing | Node.js Test Runner and MongoDB-backed HTTP integration tests |
+| Local infrastructure | Docker Compose |
+| CI | GitHub Actions |
 
 ## Core capabilities
 
-- **Authentication:** Register and log in with password hashing using bcryptjs; receive a JWT for authenticated requests.
-- **Role-based authorization:** Separate normal User and Admin permissions. Public registration cannot assign the Admin role.
-- **Event management:** Admins can create, update, and delete events; deletion is blocked while confirmed bookings exist.
-- **Event discovery:** Public upcoming-event listing with search, category filtering, sorting by date, and pagination.
-- **Seat-aware booking:** Validate event availability, prevent duplicate user/event registrations, and reserve seats using a conditional MongoDB update.
-- **Booking management:** Users can view and cancel their own registrations. Cancellation restores the reserved seats.
-- **API safeguards:** Request validation, authentication rate limiting, general API rate limiting, Helmet security headers, MongoDB query sanitization, and centralized error responses.
+### Authentication and access control
+- User registration and login.
+- Password hashing with bcryptjs.
+- JWT-based authentication for protected routes.
+- Separate User and Admin permissions.
+- Public registration always assigns the normal User role.
+- Admin account provisioning through a controlled seed script.
 
-## Technology stack
+### Event management
+- Admin-only event creation, editing, and deletion.
+- Public upcoming-event discovery.
+- Search by event name and description.
+- Category filtering, date sorting, and pagination.
+- Server-managed event capacity and creator assignment.
+- Deletion protection for events with confirmed registrations.
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| Runtime | Node.js | Executes server-side JavaScript |
-| Web framework | Express.js | HTTP server, routing, and middleware |
-| Database | MongoDB | Stores users, events, and registrations |
-| ODM | Mongoose | Schemas, validation, queries, and indexes |
-| Authentication | JSON Web Token (JWT) | Authenticates protected API requests |
-| Password security | bcryptjs | Hashes and verifies passwords |
-| Validation | express-validator | Validates request fields |
-| Security | Helmet, express-rate-limit, express-mongo-sanitize | Adds HTTP and request-level protections |
-| API testing | Postman / Thunder Client | Exercises endpoints and verifies responses |
+### Registration and seat management
+- Authenticated event registration.
+- Duplicate user/event registration protection.
+- Seat availability validation.
+- Conditional seat reservation to prevent overbooking.
+- Transactional registration and seat decrement.
+- Transactional cancellation and seat restoration.
+- Server-side registration fee calculation.
+- User-owned registration listing.
 
-## Getting started
+### API and operational safeguards
+- Request validation at route boundaries.
+- Centralized JSON error responses.
+- HTTP security headers through Helmet.
+- Configurable CORS allowlist.
+- Request-size limits and MongoDB query sanitization.
+- General API and stricter authentication rate limits.
+- Request IDs and structured JSON request logs.
+- Production-safe internal error responses.
+- Graceful shutdown on SIGINT/SIGTERM.
 
-### Prerequisites
+## Architecture
 
-- Node.js **18.18 or later** (Node.js 20 LTS is recommended).
-- npm.
-- A running MongoDB Community Server instance, or a MongoDB Atlas connection string.
-- Postman or Thunder Client for API verification.
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/naitik2043/EventEase.git
-cd EventEase
+```text
+                 API CLIENT
+              Postman / Swagger
+                      |
+                      v
+                  Express
+                      |
+       Request ID + HTTP Request Logging
+                      |
+       Helmet / CORS / Parsing / Sanitization
+                      |
+                 API Routers
+                      |
+        Validation / JWT Authentication
+                      |
+             Role Authorization
+                      |
+                 Controllers
+                      |
+             Mongoose + Sessions
+                      |
+             MongoDB Replica Set
 ```
 
-### 2. Install dependencies
-
-```bash
-npm install
-```
-
-On Windows PowerShell, use `npm.cmd` if PowerShell blocks the npm script:
-
-```powershell
-npm.cmd install
-```
-
-### 3. Create your local environment file
-
-PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-macOS/Linux:
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and add your own configuration. See [Environment configuration](#environment-configuration).
-
-### 4. Start MongoDB
-
-Make sure your local MongoDB service is running before starting the API. For MongoDB Atlas, use the connection URI supplied by Atlas in `MONGO_URI`.
-
-### 5. Seed the Admin account
-
-Set `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in your local `.env`, then run:
-
-```bash
-npm run seed:admin
-```
-
-Windows PowerShell:
-
-```powershell
-npm.cmd run seed:admin
-```
-
-The seed script creates the Admin account when the email is new. When that email already exists, it updates that account's name, role, and password using the values in `.env`. **Running the seed script for an existing account therefore resets its password to the configured `ADMIN_PASSWORD`.**
-
-### 6. Start the development server
-
-```bash
-npm run dev
-```
-
-Windows PowerShell:
-
-```powershell
-npm.cmd run dev
-```
-
-The API uses port `5000` by default. Open:
-
-- Health check: `http://localhost:5000/api/health`
-
-Expected health response:
-
-```json
-{
-  "success": true,
-  "message": "EventEase API is running."
-}
-```
-
-For a standard non-development start, run `npm start`.
-
-## Environment configuration
-
-The repository includes a safe template at [`.env.example`](.env.example). Copy it to `.env` and configure your own values:
-
-| Variable | Purpose |
-|---|---|
-| `PORT` | HTTP port; defaults to `5000` |
-| `NODE_ENV` | Runtime environment, such as `development` or `production` |
-| `MONGO_URI` | MongoDB connection string |
-| `JWT_SECRET` | Secret used to sign and verify JWTs |
-| `JWT_EXPIRES_IN` | Token lifetime; defaults to `1d` |
-| `CORS_ORIGIN` | Optional comma-separated allowed frontend origins |
-| `ADMIN_NAME` | Admin display name used by the seed script |
-| `ADMIN_EMAIL` | Admin account email used by the seed script |
-| `ADMIN_PASSWORD` | Admin password used by the seed script |
-
-Use a long, unique, random `JWT_SECRET` and a strong Admin password. Never commit `.env`, production secrets, database credentials, or real access tokens. The empty `CORS_ORIGIN` value is convenient for local practical work; configure explicit trusted origins before deployment.
+The codebase separates HTTP setup, routes, controllers, models, middleware, configuration, utilities, scripts, and documentation. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for module responsibilities and the request lifecycle.
 
 ## Project structure
 
 ```text
 EventEase/
+├── app.js
+├── server.js
 ├── config/
 │   └── db.js
 ├── controllers/
 │   ├── authController.js
 │   ├── eventController.js
 │   └── registrationController.js
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── API_TESTING.md
+│   ├── DEPLOYMENT.md
+│   ├── openapi.json
+│   ├── swagger-initializer.js
+│   └── EventEase.postman_collection.json
+├── docker/
+│   └── mongo-init.js
 ├── middleware/
 │   ├── adminMiddleware.js
 │   ├── authMiddleware.js
 │   ├── errorMiddleware.js
+│   ├── requestLogger.js
 │   └── validateRequest.js
 ├── models/
 │   ├── Event.js
@@ -185,164 +140,235 @@ EventEase/
 │   └── registrationRoutes.js
 ├── scripts/
 │   └── seedAdmin.js
-├── utils/
-│   ├── AppError.js
-│   └── asyncHandler.js
-├── docs/
-│   ├── API_TESTING.md
-│   ├── ARCHITECTURE.md
-│   └── EventEase.postman_collection.json
 ├── test/
 │   ├── AppError.test.js
+│   ├── api.integration.test.js
 │   └── asyncHandler.test.js
+├── utils/
+│   ├── AppError.js
+│   ├── asyncHandler.js
+│   └── logger.js
 ├── .github/
+│   ├── dependabot.yml
 │   └── workflows/
-│       └── ci.yml
-├── Result/                       # Project/API evidence screenshots
+│       ├── ci.yml
+│       └── codeql.yml
+├── .dockerignore
 ├── .env.example
-├── .gitignore
+├── Dockerfile
+├── docker-compose.yml
+├── LICENSE
+├── SECURITY.md
 ├── package.json
-└── server.js
+└── README.md
 ```
+
+## Quick start
+
+### Prerequisites
+
+- Node.js 22 or a later supported LTS release.
+- npm.
+- Docker Desktop with Docker Compose, or a MongoDB replica set.
+- Postman or a browser for API verification.
+
+> **Important:** EventEase uses MongoDB transactions for booking and cancellation. A standalone MongoDB server does not support these transactions. Use the included Docker Compose replica set or a compatible managed MongoDB replica set.
+
+### Option A — Run with Docker Compose
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/naitik2043/EventEase.git
+cd EventEase
+```
+
+2. Create your local environment file:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+3. Edit .env. Set a strong JWT_SECRET, Admin name, email, and password. Docker Compose supplies the internal MongoDB replica-set URI to the API container.
+
+4. Start the API and database:
+
+```bash
+docker compose up --build
+```
+
+5. In a second terminal, create the Admin account:
+
+```bash
+docker compose exec api npm run seed:admin
+```
+
+The API is available at:
+
+- API health: http://localhost:5000/api/health
+- Interactive documentation: http://localhost:5000/api-docs
+- OpenAPI JSON: http://localhost:5000/api-docs/openapi.json
+
+Stop the stack with `docker compose down`. To delete the local database volume as well, use `docker compose down -v` (this permanently deletes local MongoDB data).
+
+### Option B — Run locally
+
+1. Start a MongoDB replica set and create a database.
+2. Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/naitik2043/EventEase.git
+cd EventEase
+npm ci
+```
+
+3. Create and configure .env:
+
+```bash
+cp .env.example .env
+```
+
+Set MONGO_URI to your replica-set connection string. A typical local URI is:
+
+```text
+mongodb://127.0.0.1:27017/eventease?replicaSet=rs0
+```
+
+4. Seed the Admin account:
+
+```bash
+npm run seed:admin
+```
+
+5. Start the development server:
+
+```bash
+npm run dev
+```
+
+For a standard start:
+
+```bash
+npm start
+```
+
+## Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| PORT | No | HTTP port; defaults to 5000 |
+| NODE_ENV | Production | Runtime environment |
+| MONGO_URI | Yes | MongoDB replica-set connection URI |
+| MONGO_TEST_URI | Integration tests | Isolated test database URI; database name must include test |
+| JWT_SECRET | Yes | Long, random JWT signing secret |
+| JWT_EXPIRES_IN | No | JWT lifetime; defaults to 1d |
+| CORS_ORIGIN | Production | Comma-separated trusted frontend origins |
+| ADMIN_NAME | Admin seed | Admin display name |
+| ADMIN_EMAIL | Admin seed | Admin account email |
+| ADMIN_PASSWORD | Admin seed | Strong Admin password |
+
+Never commit .env, database credentials, JWT secrets, access tokens, or production configuration. The seed script updates the configured Admin account when the email already exists, including resetting its password to the configured value.
 
 ## API reference
 
-**Base URL:** `http://localhost:5000`
+**Base URL:** http://localhost:5000
 
-Protected routes require the JWT returned by the login endpoint:
+Protected routes require:
 
 ```http
-Authorization: Bearer <YOUR_JWT_TOKEN>
+Authorization: Bearer <JWT>
 ```
 
 ### Authentication
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | Public | Create a normal User account |
-| `POST` | `/api/auth/login` | Public | Authenticate and receive a JWT |
-
-Register request:
-
-```json
-{
-  "name": "Demo User",
-  "email": "demo.user@example.com",
-  "password": "StrongPass123!"
-}
-```
-
-Login request:
-
-```json
-{
-  "email": "demo.user@example.com",
-  "password": "StrongPass123!"
-}
-```
+| POST | /api/auth/register | Public | Create a normal User account |
+| POST | /api/auth/login | Public | Authenticate and receive a JWT |
 
 ### Events
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `GET` | `/api/events` | Public | List upcoming events |
-| `GET` | `/api/events/:id` | Public | Get event details |
-| `POST` | `/api/events` | Admin | Create an event |
-| `PUT` | `/api/events/:id` | Admin | Update an event |
-| `DELETE` | `/api/events/:id` | Admin | Delete an event if it has no confirmed registrations |
+| GET | /api/events | Public | List upcoming events |
+| GET | /api/events/:id | Public | Get event details |
+| POST | /api/events | Admin | Create an event |
+| PUT | /api/events/:id | Admin | Update an event |
+| DELETE | /api/events/:id | Admin | Delete an event if no confirmed registrations exist |
 
-Create-event request:
-
-```json
-{
-  "eventName": "Web Development Workshop",
-  "description": "A practical workshop on modern web development.",
-  "category": "Technology",
-  "eventDate": "2027-03-15T10:00:00.000Z",
-  "venue": "KIET Group of Institutions, Ghaziabad",
-  "totalSeats": 100,
-  "registrationFee": 250
-}
-```
-
-The server initializes `availableSeats` from `totalSeats` and assigns `createdBy` from the authenticated Admin. Clients must not send either field.
-
-Search, category filter, and pagination example:
+Example event search:
 
 ```http
-GET /api/events?search=web&category=Technology&page=1&limit=10
+GET /api/events?search=workshop&category=Technology&page=1&limit=10
 ```
 
 ### Registrations
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `POST` | `/api/registrations` | Authenticated User | Book event seats |
-| `GET` | `/api/registrations/my` | Authenticated User | List the current user's registrations |
-| `GET` | `/api/registrations/event/:eventId` | Admin | List registrations for an event |
-| `PATCH` | `/api/registrations/:id/cancel` | Registration owner | Cancel the user's booking |
+| POST | /api/registrations | Authenticated | Book event seats |
+| GET | /api/registrations/my | Authenticated | List the current user's registrations |
+| GET | /api/registrations/event/:eventId | Admin | List registrations for an event |
+| PATCH | /api/registrations/:id/cancel | Registration owner | Cancel a registration |
 
-Create-registration request:
+### Interactive API documentation
 
-```json
-{
-  "eventId": "REPLACE_WITH_EVENT_MONGODB_ID",
-  "numberOfSeats": 2
-}
-```
+Swagger UI is served at /api-docs. The versioned API contract is maintained in [docs/openapi.json](docs/openapi.json).
 
-The server calculates `totalAmount` from the event's registration fee and requested seat count.
+## Data model
 
-## Booking rules
+- **User:** name, email, password hash, role.
+- **Event:** event details, date, venue, seat capacity, fee, creator reference.
+- **Registration:** user reference, event reference, seat count, total amount, registration status and date.
 
-1. Public registration always creates a normal `User`; clients cannot self-assign the Admin role.
-2. A user can create only one registration record for a given event. The unique compound index also prevents a second record after cancellation.
-3. Past events cannot be booked.
-4. Seat availability is checked and decremented by a conditional database update, so concurrent booking attempts cannot reserve more seats than the stored availability.
-5. Users can view and cancel only their own registrations.
-6. Cancelling a confirmed registration restores the reserved seat count.
-7. Events with confirmed registrations cannot be deleted.
-8. When an Admin changes `totalSeats`, already-booked seats are preserved; capacity cannot be reduced below the number of seats already booked.
+A unique compound index on { userId, eventId } prevents duplicate registration records for the same user/event pair.
 
-## Security notes
+## Testing and CI
 
-- `.env` is local-only; `.env.example` contains placeholders and is safe to share.
-- Passwords are hashed with bcryptjs and are excluded from normal User queries.
-- JWT-protected routes load the current user from the database before authorizing the request.
-- Admin-only actions use a separate role-check middleware.
-- Authentication endpoints have a stricter rate limit than the general API.
-- Helmet, request validation, MongoDB query sanitization, and a centralized error handler are enabled.
-- Set `NODE_ENV=production`, configure explicit `CORS_ORIGIN` values, use HTTPS, and rotate secrets appropriately when deploying.
-
-## Testing
-
-Use the included [Postman collection](docs/EventEase.postman_collection.json) or follow the step-by-step [API testing guide](docs/API_TESTING.md).
-
-The guide covers registration/login, Admin event creation, role authorization, event discovery, successful and failed booking cases, protected-route behavior, cancellation, and seat restoration.
-
-Run the automated unit tests with:
+Run unit tests:
 
 ```bash
-npm test
+npm run test:unit
 ```
 
-The current unit tests cover the shared `AppError` and `asyncHandler` utilities and do not require MongoDB. GitHub Actions runs this test suite on pushes and pull requests targeting `main`, using Node.js 20 and 22. These are **not full API integration tests**: use the Postman collection or Thunder Client against a running MongoDB-backed server to verify endpoint behavior. Capture real request/response screenshots from your own server for assessment evidence.
+Run the full suite with an isolated MongoDB replica set:
 
-## Known scope and next steps
+```bash
+MONGO_TEST_URI="mongodb://127.0.0.1:27017/eventease_test?replicaSet=rs0" npm test
+```
 
-- This repository contains the **backend API**; a separate frontend application is not included.
-- Booking creation and seat reservation use a unique registration index, an atomic conditional seat update, and compensating cleanup. They are **not implemented as a multi-document MongoDB transaction**.
-- Event deletion currently checks for confirmed registrations and then deletes in separate operations. A registration request can theoretically race with that check; use a transaction or event lifecycle lock before production deployment.
-- The Postman collection is a starter workflow and should be run against your own local database.
-- Potential next steps: broader automated integration tests (especially booking concurrency and cancellation), structured logging, monitoring, OpenAPI documentation, and a frontend client.
+The integration suite exercises real HTTP requests against MongoDB and covers authentication, role enforcement, event creation and discovery, successful and rejected bookings, duplicate prevention, cancellation, seat restoration, insufficient capacity, and deletion protection.
 
-## Project documentation
+GitHub Actions runs the suite against Node.js 22, 24, and 26 with a disposable MongoDB replica set. See [docs/API_TESTING.md](docs/API_TESTING.md) for the test workflow.
 
-- [Architecture guide](docs/ARCHITECTURE.md) — request lifecycle, modules, authentication, event management, and booking flow.
-- [API testing guide](docs/API_TESTING.md) — step-by-step Postman/Thunder Client test sequence.
-- [Postman collection](docs/EventEase.postman_collection.json) — importable API requests.
-- [Contributing guide](CONTRIBUTING.md) — development workflow and commit conventions.
+## Deployment
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production configuration, managed MongoDB requirements, Docker deployment, secret handling, and operational considerations.
+
+The repository includes a Dockerfile and Docker Compose setup for repeatable local execution. No public production deployment URL is currently configured.
+
+## Engineering notes and current scope
+
+- Booking, cancellation, and event deletion use MongoDB transactions. Deploy to a replica set or supported sharded cluster.
+- The included Docker Compose replica set is intended for local development and testing, not high availability.
+- Integration tests require an isolated test database. They are skipped by the default test runner when MONGO_TEST_URI is not configured.
+- The repository contains the backend API and API documentation; a separate React frontend is not included.
+- Payment processing, QR ticket issuance/check-in, email delivery, waitlists, and event analytics are not part of the current implementation.
+- Before production launch, perform load testing, security review, backup/restore verification, and provider-specific monitoring setup.
 
 ## License
 
-No standalone open-source `LICENSE` file is included in this repository. All rights remain with the author unless a license is added.
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
+
+## Author
+
+**Naitik Gupta**
+
+- GitHub: [@naitik2043](https://github.com/naitik2043)
+- Repository: [EventEase](https://github.com/naitik2043/EventEase)
