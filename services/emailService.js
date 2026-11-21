@@ -45,7 +45,6 @@ async function sendEmail({ to, subject, text }) {
 export async function sendBookingConfirmation({ user, event, registration }) {
   if (!user?.email || !event) return { sent: false, reason: 'Recipient or event missing.' };
 
-  const appUrl = (process.env.APP_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
   const text = [
     `Hello ${user.name || 'there'},`,
     '',
@@ -56,7 +55,6 @@ export async function sendBookingConfirmation({ user, event, registration }) {
     `Booking reference: ${registration._id}`,
     `Ticket code: ${registration.ticketCode}`,
     '',
-    `Open your EventEase dashboard: ${appUrl}`,
     '',
     'Please keep your ticket code available for event check-in.',
     'EventEase'
