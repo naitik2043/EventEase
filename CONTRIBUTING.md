@@ -44,7 +44,7 @@ Before opening a pull request:
 - Verify successful and failure cases, including authentication and authorization boundaries.
 - Check `git diff` and `git status` to ensure no secrets or generated files are staged.
 
-The repository currently has a manual API-testing workflow and does not yet define an automated test command. Include the steps and results you manually verified in your pull request description.
+Run `npm test` before opening a pull request. This currently runs unit tests for shared error-handling utilities; it does not replace API integration testing. GitHub Actions runs the unit suite on Node.js 20 and 22. Also run the affected API requests manually against MongoDB and include the steps and results you verified in your pull request description.
 
 ## Pull requests
 
