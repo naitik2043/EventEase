@@ -1,12 +1,21 @@
-# Deployment Guide
+# EventEase Backend Deployment Guide
 
-EventEase supports local Docker execution and a Vercel Git deployment. It requires a MongoDB replica set because bookings, cancellations and waitlist promotions use multi-document transactions.
+EventEase is an Express REST API service. It does not ship a browser frontend or a frontend build.
+
+## Production requirements
+
+- Node.js 22.12+ or Node.js 24.
+- A managed MongoDB replica set or supported sharded cluster; booking and waitlist operations use transactions.
+- A unique, high-entropy JWT_SECRET with at least 32 characters.
+- An explicit CORS_ORIGIN allowlist if browser clients will call the API.
+- HTTPS, restricted database network access, backups and monitoring.
+- Optional Resend credentials for booking and waitlist notifications.
 
 ## Local Docker Compose
 
 1. Copy the environment template.
-2. Configure a strong local JWT secret and Admin seed credentials.
-3. Start MongoDB and the API.
+2. Set a unique JWT secret and local Admin seed credentials.
+3. Start the API and local one-node MongoDB replica set.
 
 ```bash
 cp .env.example .env
@@ -14,60 +23,71 @@ docker compose up --build
 docker compose exec api npm run seed:admin
 ```
 
-The local application is available at http://localhost:5000 and the Swagger UI at http://localhost:5000/api-docs.
+API endpoints:
 
-The included MongoDB single-node replica set is for development and testing only. Do not use it as a highly available production database.
+- Health: http://localhost:5000/api/health
+- Swagger UI: http://localhost:5000/api-docs
+- OpenAPI JSON: http://localhost:5000/api-docs/openapi.json
 
-## Vercel Git deployment
+The Docker MongoDB replica set is for development/testing only. Use a managed, highly available replica set for production.
 
-The root vercel.json builds the React application with Vite into frontend/dist and deploys that output together with the Express catch-all serverless function at api/[...slug].js. The frontend uses same-origin /api requests, so a separate API hostname is not required.
+## Run as a Node.js service
 
-1. Import the GitHub repository in Vercel.
-2. Keep the project Root Directory at the repository root.
-3. Use the repository's default Build Command and Output Directory from vercel.json (npm run build / frontend/dist).
-4. Add the required Production and Preview environment variables in Vercel Project Settings.
-5. Connect a managed MongoDB replica set (for example, MongoDB Atlas).
-6. Deploy the main branch and verify /, /api/health, /docs.html, login and a test booking.
+1. Provision a MongoDB replica set.
+2. Configure the environment variables in the hosting provider's secret manager.
+3. Install production dependencies with `npm ci --omit=dev`.
+4. Start the service with `npm start`.
+5. Ensure the host provides the PORT environment variable and forwards HTTPS traffic to the application.
+6. Run the Admin seed script once from a trusted environment connected to the production database.
 
-Required Vercel environment variables:
+```bash
+npm ci --omit=dev
+npm start
+```
+
+Do not run the Admin seed script automatically on every server startup or serverless cold start.
+
+## Environment variables
 
 | Variable | Required | Notes |
 |---|---|---|
-| MONGO_URI | Yes | Managed replica-set connection string; allow access from the deployment platform |
-| JWT_SECRET | Yes | Unique random secret with at least 32 characters |
-| JWT_EXPIRES_IN | No | JWT lifetime; defaults to 1d |
+| PORT | No | HTTP port; defaults to 5000 |
 | NODE_ENV | Production | Set to production |
-| CORS_ORIGIN | Production | Exact deployed application origin |
-| APP_BASE_URL | Recommended | Deployed application URL used in notification content |
-| RESEND_API_KEY | Optional | Resend API key for email notifications |
-| MAIL_FROM | Optional | Verified sender address/domain in Resend |
-| ADMIN_NAME | Admin seed | Used only by npm run seed:admin |
-| ADMIN_EMAIL | Admin seed | Used only by npm run seed:admin |
-| ADMIN_PASSWORD | Admin seed | Used only by npm run seed:admin |
+| MONGO_URI | Yes | Managed MongoDB replica-set connection |
+| JWT_SECRET | Yes | Unique random secret, 32+ characters |
+| JWT_EXPIRES_IN | No | Defaults to 1d |
+| CORS_ORIGIN | Production | Exact comma-separated browser client origins |
+| RESEND_API_KEY | Optional | Resend API key |
+| MAIL_FROM | Optional | Verified Resend sender |
+| ADMIN_NAME | Admin seed | Initial Admin name |
+| ADMIN_EMAIL | Admin seed | Initial Admin email |
+| ADMIN_PASSWORD | Admin seed | Initial Admin password |
 
-Do not put production credentials in GitHub files, README examples, or screenshots. Configure them in Vercel's encrypted Environment Variables UI. Keep Preview and Production database credentials separated where possible.
+Keep credentials in the hosting provider's encrypted environment settings. Never commit real values to GitHub or expose them in logs/screenshots.
 
-## Provisioning the first Admin
+## Provision the first Admin
 
-The application intentionally does not allow public users to select an Admin role. Create the first Admin through a controlled seed operation against the intended database. Run npm run seed:admin from a trusted environment with MONGO_URI and ADMIN_* variables set. Avoid running the seed operation on every serverless cold start.
+Public registration always creates a normal User. Provision the first Admin through a controlled seed operation:
+
+```bash
+npm run seed:admin
+```
+
+Run it once from a trusted terminal with MONGO_URI and ADMIN_* variables set.
 
 ## Email notifications
 
-Booking confirmation and waitlist promotion emails are optional. Configure RESEND_API_KEY and MAIL_FROM only after verifying the sender/domain in Resend. Delivery is best-effort and does not change booking state if the email provider is unavailable.
-
-## QR tickets
-
-Ticket codes are random, opaque identifiers. The UI uses an external QR image endpoint to render the opaque code as a QR image; no attendee email or name is sent to that service. Admin check-in is performed by the authenticated API, not by trusting the QR image itself.
+Booking confirmation and waitlist promotion emails are optional. Configure RESEND_API_KEY and MAIL_FROM only after verifying the sender/domain in Resend. Delivery is best-effort and does not change booking state if the provider is unavailable.
 
 ## Production checklist
 
 - Use a managed MongoDB replica set with backups and tested restore procedures.
-- Use a unique JWT secret and exact CORS allowlist.
-- Use HTTPS and restrict database network access.
-- Seed Admin credentials through a secret manager or trusted terminal.
-- Configure Resend sender verification if email notifications are enabled.
-- Review CodeQL and Dependabot alerts.
+- Restrict Atlas network access to the backend host's egress IPs where possible.
+- Use a unique JWT secret and explicit CORS allowlist.
+- Use HTTPS and least-privilege MongoDB database credentials.
+- Seed Admin credentials through a trusted environment.
+- Configure Resend sender verification only if email is enabled.
 - Run the integration suite against a disposable test database.
 - Perform concurrency, load, abuse and security testing.
-- Monitor API latency, errors, database load, and email delivery.
-- Configure retention policies for operational logs.
+- Monitor API latency, errors, database load and email delivery.
+- Configure operational log retention and an incident-response process.
