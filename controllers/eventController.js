@@ -110,30 +110,42 @@ export const updateEvent = asyncHandler(async (req, res) => {
     updates.eventDate = parsedDate;
   }
 
+  if (updates.totalSeats !== undefined) {
+    const session = await mongoose.startSession();
+    try {
+      let updated;
+      await session.withTransaction(async () => {
+        const current = await Event.findById(req.params.id).session(session);
+        if (!current) throw new AppError('Event not found.', 404);
+
+        const bookedSeats = current.totalSeats - current.availableSeats;
+        if (updates.totalSeats < bookedSeats) {
+          throw new AppError(`totalSeats cannot be less than ${bookedSeats} already-booked seats.`, 400);
+        }
+
+        const result = await Event.findOneAndUpdate(
+          {
+            _id: current._id,
+            totalSeats: current.totalSeats,
+            availableSeats: current.availableSeats
+          },
+          { $set: { ...updates, availableSeats: updates.totalSeats - bookedSeats } },
+          { new: true, runValidators: true, session }
+        );
+
+        if (!result) {
+          throw new AppError('Event changed while you were editing it. Please retry.', 409);
+        }
+        updated = result;
+      });
+      return res.status(200).json({ success: true, message: 'Event updated successfully.', event: updated });
+    } finally {
+      await session.endSession();
+    }
+  }
+
   const current = await Event.findById(req.params.id);
   if (!current) throw new AppError('Event not found.', 404);
-
-  if (updates.totalSeats !== undefined) {
-    const bookedSeats = current.totalSeats - current.availableSeats;
-    if (updates.totalSeats < bookedSeats) {
-      throw new AppError(`totalSeats cannot be less than ${bookedSeats} already-booked seats.`, 400);
-    }
-
-    const updated = await Event.findOneAndUpdate(
-      {
-        _id: current._id,
-        totalSeats: current.totalSeats,
-        availableSeats: current.availableSeats
-      },
-      { $set: { ...updates, availableSeats: updates.totalSeats - bookedSeats } },
-      { new: true, runValidators: true }
-    );
-
-    if (!updated) {
-      throw new AppError('Event changed while you were editing it. Please retry.', 409);
-    }
-    return res.status(200).json({ success: true, message: 'Event updated successfully.', event: updated });
-  }
 
   const updated = await Event.findByIdAndUpdate(
     current._id,
