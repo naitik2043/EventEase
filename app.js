@@ -4,8 +4,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
@@ -15,9 +13,7 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import requestLogger from './middleware/requestLogger.js';
 
 const app = express();
-const appDirectory = path.dirname(fileURLToPath(import.meta.url));
-const docsDirectory = path.join(appDirectory, 'docs');
-const clientDirectory = path.join(appDirectory, 'frontend', 'dist');
+const docsDirectory = new URL('./docs/', import.meta.url).pathname;
 
 app.disable('x-powered-by');
 app.use(requestLogger);
@@ -98,13 +94,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/analytics', analyticsRoutes);
-
-// Serve the browser application from the same origin in local Docker/Node deployments.
-app.use(express.static(clientDirectory, {
-  index: 'index.html',
-  fallthrough: true,
-  maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0
-}));
 
 app.use(notFound);
 app.use(errorHandler);
