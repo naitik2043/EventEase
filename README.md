@@ -332,10 +332,10 @@ Swagger UI is served at /api-docs. The versioned API contract is maintained in [
 
 The repository also retains example screenshots from the original manual API verification workflow:
 
-- [API health check](<Result/GET HEALT.png>)
+- [API health check](Result/GET%20HEALT.png)
 - [MongoDB connection](Result/MONGODB.png)
 - [Admin event creation](Result/POST-Admin_Create_Event.png)
-- [User login](<Result/POST-USer login .png>)
+- [User login](Result/POST-USer%20login%20.png)
 - [User registration](Result/User-register.png)
 
 ## Data model
