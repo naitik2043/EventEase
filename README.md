@@ -24,6 +24,7 @@ EventEase supports public event discovery, secure user authentication, Admin-man
 - [Booking rules](#booking-rules)
 - [Security notes](#security-notes)
 - [Testing](#testing)
+- [Project documentation](#project-documentation)
 - [Known scope and next steps](#known-scope-and-next-steps)
 
 ## Core capabilities
@@ -189,7 +190,14 @@ EventEase/
 │   └── asyncHandler.js
 ├── docs/
 │   ├── API_TESTING.md
+│   ├── ARCHITECTURE.md
 │   └── EventEase.postman_collection.json
+├── test/
+│   ├── AppError.test.js
+│   └── asyncHandler.test.js
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── Result/                       # Project/API evidence screenshots
 ├── .env.example
 ├── .gitignore
@@ -312,14 +320,27 @@ Use the included [Postman collection](docs/EventEase.postman_collection.json) or
 
 The guide covers registration/login, Admin event creation, role authorization, event discovery, successful and failed booking cases, protected-route behavior, cancellation, and seat restoration.
 
-This repository currently provides a manual API-testing workflow; `package.json` does not yet define an automated test script. Capture real request/response screenshots from your own running server for assessment evidence.
+Run the automated unit tests with:
+
+```bash
+npm test
+```
+
+The current unit tests cover the shared `AppError` and `asyncHandler` utilities and do not require MongoDB. GitHub Actions runs this test suite on pushes and pull requests targeting `main`, using Node.js 20 and 22. These are **not full API integration tests**: use the Postman collection or Thunder Client against a running MongoDB-backed server to verify endpoint behavior. Capture real request/response screenshots from your own server for assessment evidence.
 
 ## Known scope and next steps
 
 - This repository contains the **backend API**; a separate frontend application is not included.
 - Booking creation and seat reservation use a unique registration index, an atomic conditional seat update, and compensating cleanup. They are **not implemented as a multi-document MongoDB transaction**.
 - The Postman collection is a starter workflow and should be run against your own local database.
-- Potential next steps: automated integration tests, CI checks, structured logging, monitoring, OpenAPI documentation, and a frontend client.
+- Potential next steps: broader automated integration tests (especially booking concurrency and cancellation), structured logging, monitoring, OpenAPI documentation, and a frontend client.
+
+## Project documentation
+
+- [Architecture guide](docs/ARCHITECTURE.md) — request lifecycle, modules, authentication, event management, and booking flow.
+- [API testing guide](docs/API_TESTING.md) — step-by-step Postman/Thunder Client test sequence.
+- [Postman collection](docs/EventEase.postman_collection.json) — importable API requests.
+- [Contributing guide](CONTRIBUTING.md) — development workflow and commit conventions.
 
 ## License
 
