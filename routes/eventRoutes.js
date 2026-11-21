@@ -3,6 +3,7 @@ import { body, param, query } from 'express-validator';
 import protect from '../middleware/authMiddleware.js';
 import restrictToAdmin from '../middleware/adminMiddleware.js';
 import validateRequest from '../middleware/validateRequest.js';
+import { getEventAnalytics } from '../controllers/analyticsController.js';
 import {
   createEvent,
   getUpcomingEvents,
@@ -42,6 +43,14 @@ router.get('/', [
   query('category').optional().isString().trim().isLength({ max: 60 })
 ], validateRequest, getUpcomingEvents);
 
+router.get(
+  '/:id/analytics',
+  protect,
+  restrictToAdmin,
+  param('id').isMongoId().withMessage('Invalid event ID.'),
+  validateRequest,
+  getEventAnalytics
+);
 router.get('/:id', param('id').isMongoId().withMessage('Invalid event ID.'), validateRequest, getEventById);
 router.post('/', protect, restrictToAdmin, createEventValidation, validateRequest, createEvent);
 router.put('/:id', protect, restrictToAdmin, param('id').isMongoId(), updateEventValidation, validateRequest, updateEvent);
