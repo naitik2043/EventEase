@@ -1,13 +1,14 @@
 import User from '../models/User.js';
 import Event from '../models/Event.js';
 import Registration from '../models/Registration.js';
+import Waitlist from '../models/Waitlist.js';
 import AppError from '../utils/AppError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 export const getOverviewAnalytics = asyncHandler(async (_req, res) => {
   const now = new Date();
 
-  const [users, upcomingEvents, eventCount, registrationStats, topEvents, recentRegistrations] = await Promise.all([
+  const [users, upcomingEvents, eventCount, registrationStats, topEvents, recentRegistrations, activeWaitlistRequests] = await Promise.all([
     User.countDocuments(),
     Event.countDocuments({ eventDate: { $gt: now } }),
     Event.countDocuments(),
@@ -77,7 +78,8 @@ export const getOverviewAnalytics = asyncHandler(async (_req, res) => {
       .limit(8)
       .populate('userId', 'name email')
       .populate('eventId', 'eventName eventDate')
-      .select('userId eventId numberOfSeats totalAmount registrationStatus createdAt checkedInAt')
+      .select('userId eventId numberOfSeats totalAmount registrationStatus createdAt checkedInAt'),
+    Waitlist.countDocuments({ status: 'Waiting' })
   ]);
 
   const confirmed = registrationStats.find((item) => item._id === 'Confirmed') || {
@@ -101,6 +103,7 @@ export const getOverviewAnalytics = asyncHandler(async (_req, res) => {
       confirmedRegistrations: confirmed.registrations,
       cancelledRegistrations: cancelled.registrations,
       confirmedSeats: confirmed.seats,
+      activeWaitlistRequests,
       grossConfirmedRevenue: Number(confirmed.revenue.toFixed(2))
     },
     topEvents,
@@ -114,7 +117,7 @@ export const getEventAnalytics = asyncHandler(async (req, res) => {
 
   if (!event) throw new AppError('Event not found.', 404);
 
-  const rows = await Registration.aggregate([
+  const [rows, waitingListEntries] = await Promise.all([Registration.aggregate([
     { $match: { eventId: event._id } },
     {
       $group: {
@@ -137,7 +140,7 @@ export const getEventAnalytics = asyncHandler(async (req, res) => {
         }
       }
     }
-  ]);
+  ]), Waitlist.countDocuments({ eventId: event._id, status: 'Waiting' })]);
   const stats = rows.reduce((result, item) => {
     result[item._id.toLowerCase()] = item;
     return result;
@@ -160,6 +163,7 @@ export const getEventAnalytics = asyncHandler(async (req, res) => {
         ? Number(((bookedSeats / event.totalSeats) * 100).toFixed(1))
         : 0,
       checkIns: confirmed.checkedIn,
+      waitingListEntries,
       grossConfirmedRevenue: Number(confirmed.revenue.toFixed(2))
     }
   });
