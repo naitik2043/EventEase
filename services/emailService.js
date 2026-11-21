@@ -1,6 +1,13 @@
 import { log } from '../utils/logger.js';
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
+const EMAIL_TIMEOUT_MS = 7000;
+
+function getSafeErrorMessage(error) {
+  return error?.name === 'TimeoutError' || error?.name === 'AbortError'
+    ? 'Email provider request timed out.'
+    : 'Email provider request failed.';
+}
 
 async function sendEmail({ to, subject, text }) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -19,7 +26,7 @@ async function sendEmail({ to, subject, text }) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ from, to: [to], subject, text }),
-      signal: AbortSignal.timeout(7000)
+      signal: AbortSignal.timeout(EMAIL_TIMEOUT_MS)
     });
 
     if (!response.ok) {
@@ -37,7 +44,7 @@ async function sendEmail({ to, subject, text }) {
     });
     return { sent: true, emailId: result.id };
   } catch (error) {
-    log('warn', 'email_delivery_error', { message: error.message });
+    log('warn', 'email_delivery_error', { message: getSafeErrorMessage(error) });
     return { sent: false, reason: 'Email provider is temporarily unavailable.' };
   }
 }
