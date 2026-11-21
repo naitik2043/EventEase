@@ -611,16 +611,26 @@ integrationTest(
       });
       assert.equal(booking.status, 201);
 
+      const cleanupWaitlistUser = await User.create({
+        name: 'Cleanup Waitlist Attendee',
+        email: 'cleanup.waitlist@example.com',
+        password: 'CleanupWaitlistPass123!',
+        role: 'User'
+      });
+      const cleanupWaitlistLogin = await request('/api/auth/login', {
+        method: 'POST',
+        body: {
+          email: cleanupWaitlistUser.email,
+          password: 'CleanupWaitlistPass123!'
+        }
+      });
+      assert.equal(cleanupWaitlistLogin.status, 200);
+
       const waitlist = await request('/api/registrations/waitlist', {
         method: 'POST',
-        token: (await request('/api/auth/login', {
-          method: 'POST',
-          body: { email: adminEmail, password: adminPassword }
-        })).body.token,
+        token: cleanupWaitlistLogin.body.token,
         body: { eventId: cleanupEventId, numberOfSeats: 2 }
       });
-      // An Admin may also join the attendee waitlist because this endpoint
-      // is authenticated, not role-restricted.
       assert.equal(waitlist.status, 201);
 
       const cancellation = await request(
