@@ -1,12 +1,25 @@
+# Dependencies
 node_modules
 **/node_modules
-npm-debug.log*
+
+# Secrets and local configuration
 .env
 .env.*
 !.env.example
+
+# Git metadata and CI configuration
 .git
 .github
-.vscode
+
+# Tests and coverage (not required in production image)
+test
 coverage
 .nyc_output
-Result
+
+# Local tooling
+.vscode
+.idea
+
+# Logs and generated files
+*.log
+npm-debug.log*
