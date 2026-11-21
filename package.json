@@ -34,19 +34,7 @@
     "nodemon": "^3.1.14"
   },
   "author": "Naitik Gupta",
-  "keywords": [
-    "event-management-api",
-    "backend",
-    "nodejs",
-    "express",
-    "mongodb",
-    "mongoose",
-    "rest-api",
-    "jwt",
-    "transactions",
-    "qr-tickets",
-    "waitlist"
-  ],
+  "keywords": ["event-management-api", "backend", "nodejs", "express", "mongodb", "mongoose", "rest-api", "jwt", "transactions", "qr-tickets", "waitlist"],
   "repository": {
     "type": "git",
     "url": "https://github.com/naitik2043/EventEase.git"
