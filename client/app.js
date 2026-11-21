@@ -173,6 +173,7 @@ function renderWaitlist() {
           <div class="booking-main"><h3>${escapeHtml(item.eventId?.eventName || 'Event')}</h3><p>${formatDate(item.eventId?.eventDate)} · ${item.numberOfSeats} seat(s)</p><small>Joined ${formatDate(item.joinedAt)}</small></div>
           <span class="status-pill ${item.status === 'Promoted' ? 'status-confirmed' : item.status === 'Waiting' ? 'status-waiting' : 'status-cancelled'}">${escapeHtml(item.status)}</span>
           ${item.status === 'Promoted' && item.promotedRegistrationId?._id ? `<button class="button button-outline button-small" data-action="ticket" data-id="${item.promotedRegistrationId._id}">View ticket</button>` : ''}
+          ${item.status === 'Waiting' ? `<button class="text-button danger-text" data-action="cancel-waitlist" data-id="${item._id}">Leave waitlist</button>` : ''}
         </article>`).join('')}</div>` : '<div class="empty-state"><div class="empty-icon">↗</div><h3>No waitlist requests</h3><p>When an event is fully booked for your group size, you can join its waitlist from the event card.</p></div>'}
     </section>
   `;
@@ -263,6 +264,11 @@ async function loadWaitlist() {
   state.waitlist = response.waitlist || [];
 }
 
+async function loadAdminEvents() {
+  const response = await api('/api/events/admin/all?limit=100');
+  state.events = response.events || [];
+}
+
 async function loadAnalytics() {
   if (state.user?.role !== 'Admin') return;
   state.analytics = await api('/api/analytics/overview');
@@ -280,7 +286,7 @@ async function render() {
       await loadWaitlist();
       shell(renderWaitlist());
     } else if (state.tab === 'admin' && state.user?.role === 'Admin') {
-      await Promise.all([loadEvents(), loadAnalytics()]);
+      await Promise.all([loadAdminEvents(), loadAnalytics()]);
       shell(renderAdmin());
     } else {
       state.tab = 'events';
@@ -487,6 +493,14 @@ document.addEventListener('click', async (event) => {
     await bookEvent(target.dataset.id, seats);
   } else if (action === 'ticket') {
     await showTicket(target.dataset.id);
+  } else if (action === 'cancel-waitlist') {
+    try {
+      await api(`/api/registrations/waitlist/${target.dataset.id}`, { method: 'DELETE' });
+      toast('You have left the waitlist.');
+      await render();
+    } catch (error) {
+      toast(error.message, 'error');
+    }
   } else if (action === 'cancel-booking') {
     state.modal = 'confirm-cancel';
     state.modalData = target.dataset.id;
