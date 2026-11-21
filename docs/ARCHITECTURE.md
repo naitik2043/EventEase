@@ -65,7 +65,7 @@ Cancellation changes the registration state and restores the seats in one transa
 
 ## FIFO waitlist
 
-A Waitlist document records the user, event, requested seat count, queue timestamp and status. The unique user/event index prevents duplicate queue entries.
+A Waitlist document records the user, event, requested seat count, queue timestamp and status. The partial unique user/event index prevents duplicate active Waiting entries while allowing a user to leave and later rejoin the queue.
 
 After cancellation restores capacity, the transaction checks the oldest Waiting entry. Eligible requests are promoted in FIFO order, with a registration record and ticket created in the same transaction. A party that does not fit blocks later smaller requests rather than allowing them to jump the queue.
 
