@@ -85,7 +85,7 @@ Booking confirmations and waitlist promotion notifications can be sent through R
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| Frontend | HTML, CSS, modern JavaScript modules | Responsive attendee and Admin dashboard |
+| Frontend | React 19, Vite 8, CSS | Component-based attendee and Admin dashboard |
 | Backend | Node.js, Express.js | REST API and business logic |
 | Database | MongoDB replica set | Persistent data and multi-document transactions |
 | ODM | Mongoose | Schemas, indexes, queries and sessions |
@@ -134,14 +134,19 @@ For a detailed module and request-flow explanation, see [docs/ARCHITECTURE.md](d
 EventEase/
 ├── api/
 │   └── [...slug].js
-├── client/
-│   ├── app.js
-│   ├── api.js
+├── frontend/
+│   ├── public/
+│   │   ├── docs.html
+│   │   ├── docs-initializer.js
+│   │   └── openapi.json
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── api.js
+│   │   ├── main.jsx
+│   │   └── styles.css
 │   ├── index.html
-│   ├── styles.css
-│   ├── docs.html
-│   ├── docs-initializer.js
-│   └── openapi.json
+│   ├── package.json
+│   └── vite.config.js
 ├── config/
 │   ├── db.js
 │   └── runtime.js
@@ -189,7 +194,7 @@ EventEase/
 ### Prerequisites
 
 - Docker Desktop with Docker Compose.
-- Node.js 22+ and npm for local test commands.
+- Node.js 22.12+ and npm for local development and test commands.
 - A browser or Postman.
 
 MongoDB transactions require a replica set. The included Compose stack starts MongoDB as a single-node replica set for development.
@@ -258,7 +263,19 @@ npm run seed:admin
 npm run dev
 ```
 
-The Express server serves the API, docs, and browser dashboard from the same origin at http://localhost:5000.
+For the React development workflow, run the API and Vite frontend in separate terminals:
+
+```bash
+# Terminal 1 — API + MongoDB-backed Express server
+npm run dev
+
+# Terminal 2 — React + Vite development server
+npm run dev:web
+```
+
+Open http://localhost:5173. Vite proxies /api requests to http://localhost:5000. For a production-style local build, run `npm run build`; the Express server then serves the compiled React app from `frontend/dist` at http://localhost:5000.
+
+The Docker image and Vercel deployment both build the React application before serving it.
 
 ## Environment variables
 
