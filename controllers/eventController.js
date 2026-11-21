@@ -61,6 +61,31 @@ export const getUpcomingEvents = asyncHandler(async (req, res) => {
   });
 });
 
+export const getAllEventsForAdmin = asyncHandler(async (req, res) => {
+  const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
+  const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 50, 1), 100);
+  const [events, total] = await Promise.all([
+    Event.find()
+      .populate('createdBy', 'name')
+      .sort({ eventDate: 1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Event.countDocuments()
+  ]);
+
+  res.status(200).json({
+    success: true,
+    results: events.length,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    },
+    events
+  });
+});
+
 export const getEventById = asyncHandler(async (req, res) => {
   const event = await Event.findById(req.params.id).populate('createdBy', 'name');
   if (!event) throw new AppError('Event not found.', 404);
