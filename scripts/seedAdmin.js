@@ -13,8 +13,8 @@ async function seedAdmin() {
     );
   }
 
-  if (ADMIN_PASSWORD.length < 8) {
-    throw new Error('ADMIN_PASSWORD must contain at least 8 characters.');
+  if (ADMIN_PASSWORD.length < 12 || ADMIN_PASSWORD.length > 72) {
+    throw new Error('ADMIN_PASSWORD must contain between 12 and 72 characters.');
   }
 
   await connectDB();
