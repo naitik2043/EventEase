@@ -43,6 +43,12 @@ const eventSchema = new mongoose.Schema(
       min: 0,
       validate: Number.isInteger
     },
+    waitlistRequests: {
+      type: Number,
+      min: 0,
+      default: 0,
+      validate: Number.isInteger
+    },
     registrationFee: {
       type: Number,
       required: true,

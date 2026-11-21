@@ -3,9 +3,11 @@ import { body, param, query } from 'express-validator';
 import protect from '../middleware/authMiddleware.js';
 import restrictToAdmin from '../middleware/adminMiddleware.js';
 import validateRequest from '../middleware/validateRequest.js';
+import { getEventAnalytics } from '../controllers/analyticsController.js';
 import {
   createEvent,
   getUpcomingEvents,
+  getAllEventsForAdmin,
   getEventById,
   updateEvent,
   deleteEvent
@@ -35,6 +37,11 @@ const updateEventValidation = [
   body('createdBy').not().exists().withMessage('createdBy is assigned by the server.')
 ];
 
+router.get('/admin/all', protect, restrictToAdmin, [
+  query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer.'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('limit must be between 1 and 100.')
+], validateRequest, getAllEventsForAdmin);
+
 router.get('/', [
   query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer.'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('limit must be between 1 and 100.'),
@@ -42,6 +49,14 @@ router.get('/', [
   query('category').optional().isString().trim().isLength({ max: 60 })
 ], validateRequest, getUpcomingEvents);
 
+router.get(
+  '/:id/analytics',
+  protect,
+  restrictToAdmin,
+  param('id').isMongoId().withMessage('Invalid event ID.'),
+  validateRequest,
+  getEventAnalytics
+);
 router.get('/:id', param('id').isMongoId().withMessage('Invalid event ID.'), validateRequest, getEventById);
 router.post('/', protect, restrictToAdmin, createEventValidation, validateRequest, createEvent);
 router.put('/:id', protect, restrictToAdmin, param('id').isMongoId(), updateEventValidation, validateRequest, updateEvent);

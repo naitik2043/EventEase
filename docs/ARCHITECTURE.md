@@ -1,93 +1,92 @@
 # EventEase Architecture
 
-## Overview
+## Product overview
 
-EventEase is a layered REST API. Its modules separate HTTP setup, route definitions, validation, authentication, business logic, persistence, and operational utilities.
+EventEase is a full-stack event management platform. The frontend is a responsive static web client; the backend is a layered Express REST API backed by MongoDB.
 
 ```text
-HTTP Client (Postman / Swagger UI)
-                  |
-                  v
-                 app.js
-                  |
-        request ID + HTTP logging
-                  |
-        Helmet / CORS / parsing
-                  |
-       sanitization / rate limiting
-                  |
-                Routes
-                  |
-       Validation / authentication
-                  |
-          Authorization checks
-                  |
-              Controllers
-                  |
-        Mongoose models / sessions
-                  |
-                MongoDB
-                  |
-       Centralized error handler
-                  |
-             JSON response
+             Browser / Responsive UI
+            Events · My Bookings · Admin
+                       |
+                 Same-origin API
+                       |
+               Vercel Serverless
+             api/[...slug].js adapter
+                       |
+                 Express app.js
+                       |
+       Security · CORS · Validation · JWT
+                       |
+       Routes · Controllers · Middleware
+                       |
+               Mongoose Models
+                       |
+                MongoDB Replica Set
+           /         |          \
+       Users       Events    Registrations
+                               |
+                         Waitlist entries
 ```
 
-## Main modules
+## Repository modules
 
 | Path | Responsibility |
 |---|---|
-| app.js | Creates the Express app, middleware, route mounts and API docs |
-| server.js | Validates production settings, connects the database and handles shutdown |
-| config/db.js | Establishes the Mongoose connection |
-| routes/ | Declares endpoints, validation and middleware ordering |
-| controllers/ | Implements authentication, event and registration use cases |
-| models/ | Defines User, Event and Registration schemas and indexes |
-| middleware/authMiddleware.js | Verifies JWT and loads the current user |
-| middleware/adminMiddleware.js | Enforces Admin permissions |
-| middleware/requestLogger.js | Adds a request ID and logs method, path, status and latency |
-| middleware/errorMiddleware.js | Normalizes errors into consistent JSON responses |
-| utils/AppError.js | HTTP-aware operational error class |
-| utils/asyncHandler.js | Forwards rejected async handlers to Express error middleware |
-| utils/logger.js | Writes structured JSON log records |
-| scripts/seedAdmin.js | Creates or updates the configured Admin account |
-| docs/openapi.json | OpenAPI contract served by Swagger UI |
-| test/ | Unit and optional MongoDB-backed HTTP integration tests |
+| client/ | Responsive attendee and Admin dashboards, API client, and Swagger UI |
+| api/[...slug].js | Serverless adapter for the Express application |
+| app.js | Configures Express middleware, docs, health check and route mounts |
+| server.js | Local Node.js entry point, production config validation and graceful shutdown |
+| config/db.js | Reuses the Mongoose connection across requests |
+| routes/ | API endpoints, authentication/authorization ordering and validation |
+| controllers/ | Authentication, event, registration, ticket, waitlist and analytics use cases |
+| models/ | User, Event, Registration and Waitlist schemas and indexes |
+| services/emailService.js | Best-effort booking and waitlist email delivery via Resend |
+| middleware/ | JWT auth, Admin authorization, validation, request logging and errors |
+| utils/ | Shared error and structured logging utilities |
+| docs/ | API contract, test guide, deployment notes and architecture |
+| test/ | Unit tests and MongoDB-backed HTTP integration tests |
 
 ## Request lifecycle
 
-1. server.js validates production settings and connects to MongoDB.
-2. app.js configures request logging, Helmet, CORS, body parsing, sanitization and rate limits.
-3. A route applies request validation where applicable.
-4. Protected routes run protect, which verifies the Bearer JWT and loads the current user.
-5. Admin-only routes additionally run restrictToAdmin.
-6. Controllers execute business logic through Mongoose models.
-7. asyncHandler forwards rejected promises to centralized error middleware.
-8. The client receives JSON; error responses include a request ID.
+1. A browser or API client sends a request.
+2. Locally, server.js connects to MongoDB and starts Express. On Vercel, api/[...slug].js reuses a cached connection and forwards the request to the same Express app.
+3. app.js applies request IDs, logging, Helmet, CORS, request-size limits, MongoDB query sanitization and rate limits.
+4. Routers validate request data and run JWT authentication where required.
+5. Admin-only routes also run role authorization.
+6. Controllers enforce business rules and use Mongoose models.
+7. asyncHandler forwards rejected promises to centralized error handling.
+8. The client receives JSON with consistent status codes and request IDs for errors.
 
-## Authentication and authorization
+## Booking and cancellation consistency
 
-Public registration always assigns the User role on the server. Passwords are hashed with bcryptjs before persistence. Login verifies the submitted password and issues a signed JWT. Protected routes validate the token and fetch the current user from MongoDB, so authorization uses the current database role rather than trusting a client-provided role.
+A booking updates two documents: Event.availableSeats and a Registration record. Both writes happen in one MongoDB transaction. The seat decrement is conditional on availableSeats being greater than or equal to the requested quantity. A unique compound index on { userId, eventId } prevents a second registration record for the same event/user pair.
 
-## Transactional booking
+Cancellation changes the registration state and restores the seats in one transaction. The cancelled record is retained, preserving the one-registration-per-event business rule.
 
-Registration and event capacity are separate documents. Booking now runs the conditional seat decrement and registration insert inside one MongoDB transaction. If either operation fails, the transaction aborts and both changes are rolled back.
+## FIFO waitlist
 
-The event seat update includes the condition availableSeats >= numberOfSeats. The unique compound index { userId, eventId } remains the final duplicate-registration guard.
+A Waitlist document records the user, event, requested seat count, queue timestamp and status. The partial unique user/event index prevents duplicate active Waiting entries while allowing a user to leave and later rejoin the queue.
 
-Cancellation runs the status transition and seat restoration in one transaction. Event deletion also performs the confirmed-registration check, registration cleanup, and event deletion transactionally.
+After cancellation restores capacity, the transaction checks the oldest Waiting entry. Eligible requests are promoted in FIFO order, with a registration record and ticket created in the same transaction. A party that does not fit blocks later smaller requests rather than allowing them to jump the queue.
 
-**Deployment requirement:** MongoDB transactions require a replica set or supported sharded cluster. A standalone MongoDB server is not sufficient. The included Docker Compose environment initializes a local single-node replica set for development and testing.
+## QR ticket and event check-in
 
-## API documentation
+Every new confirmed Registration receives a cryptographically random ticket code. The attendee ticket endpoint returns an opaque QR payload and image URL. The code contains no attendee personal information. Admin check-in atomically sets checkedInAt and checkedInBy; an already-used or cancelled ticket is rejected.
 
-The OpenAPI 3.0.3 contract is stored in docs/openapi.json and exposed through Swagger UI at /api-docs. The raw specification is available at /api-docs/openapi.json.
+The current QR image is rendered through an external QR image endpoint using only the opaque ticket code. An authenticated Admin API is still required to validate/check in a ticket.
 
-## Operational controls
+## Email notifications
 
-- Production startup requires a strong JWT secret and explicit CORS allowlist.
-- Request IDs are returned in the X-Request-ID header.
-- Request logs omit tokens, passwords, request bodies and query strings.
-- Production 500 responses do not expose internal error messages or stack traces.
-- The server closes its HTTP listener and disconnects Mongoose on SIGINT/SIGTERM.
-- Docker and GitHub Actions configuration are included.
+Booking confirmation and waitlist promotion messages are sent through Resend when RESEND_API_KEY and MAIL_FROM are configured. Email delivery is best-effort and is deliberately outside the database transaction; a temporary mail outage does not undo a successful booking. No email credential is required for local development.
+
+## Admin analytics
+
+The protected analytics endpoints aggregate users, upcoming events, confirmed bookings, reserved seats, booking revenue, top events, recent activity, occupancy and check-in counts. Revenue is a booking-value calculation, not a payment-provider settlement report.
+
+## MongoDB deployment requirement
+
+Booking, cancellation, and event deletion use multi-document transactions. The database must be a replica set or supported sharded cluster. The included Docker Compose stack starts a one-node replica set for local development. It is not a high-availability production database.
+
+## API and frontend documentation
+
+The OpenAPI 3.0.3 contract is stored in docs/openapi.json and copied to client/openapi.json for static Swagger UI. Locally, API docs are available at /api-docs; on the static frontend, open /docs.html.

@@ -10,11 +10,14 @@ import { fileURLToPath } from 'node:url';
 import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import registrationRoutes from './routes/registrationRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import requestLogger from './middleware/requestLogger.js';
 
 const app = express();
-const docsDirectory = path.join(path.dirname(fileURLToPath(import.meta.url)), 'docs');
+const appDirectory = path.dirname(fileURLToPath(import.meta.url));
+const docsDirectory = path.join(appDirectory, 'docs');
+const clientDirectory = path.join(appDirectory, 'client');
 
 app.disable('x-powered-by');
 app.use(requestLogger);
@@ -31,7 +34,7 @@ app.use(helmet({
       imgSrc: ["'self'", 'data:', 'https:'],
       objectSrc: ["'none'"],
       scriptSrc: ["'self'", 'https://unpkg.com'],
-      styleSrc: ["'self'", 'https://unpkg.com', "'unsafe-inline'"]
+      styleSrc: ["'self'", 'https://unpkg.com', 'https://fonts.googleapis.com', "'unsafe-inline'"]
     }
   }
 }));
@@ -94,6 +97,14 @@ app.get('/api-docs/swagger-initializer.js', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
+app.use('/api/analytics', analyticsRoutes);
+
+// Serve the browser application from the same origin in local Docker/Node deployments.
+app.use(express.static(clientDirectory, {
+  index: 'index.html',
+  fallthrough: true,
+  maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0
+}));
 
 app.use(notFound);
 app.use(errorHandler);

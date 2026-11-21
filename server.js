@@ -4,30 +4,13 @@ import { pathToFileURL } from 'node:url';
 
 import app from './app.js';
 import { connectDB } from './config/db.js';
+import { assertProductionEnvironment } from './config/runtime.js';
 import { log } from './utils/logger.js';
 
 const PORT = Number(process.env.PORT) || 5000;
 
-function validateRuntimeEnvironment() {
-  if (process.env.NODE_ENV !== 'production') return;
-
-  const secret = process.env.JWT_SECRET || '';
-  if (secret.length < 32 || /replace|change.?this|example/i.test(secret)) {
-    throw new Error('Production requires a unique, high-entropy JWT_SECRET of at least 32 characters.');
-  }
-
-  const origins = process.env.CORS_ORIGIN
-    ?.split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
-  if (!origins?.length) {
-    throw new Error('Production requires explicit trusted origins in CORS_ORIGIN.');
-  }
-}
-
 export async function startServer() {
-  validateRuntimeEnvironment();
+  assertProductionEnvironment();
   await connectDB();
 
   const server = app.listen(PORT, () => {
