@@ -11,7 +11,7 @@
     "dev": "nodemon server.js",
     "seed:admin": "node scripts/seedAdmin.js",
     "test": "node --test",
-    "test:unit": "node --test test/AppError.test.js test/asyncHandler.test.js",
+    "test:unit": "node --test test/AppError.test.js test/asyncHandler.test.js test/runtime.test.js",
     "test:integration": "node --test test/api.integration.test.js",
     "build": "node scripts/checkSyntax.js"
   },
