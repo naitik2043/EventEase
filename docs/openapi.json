@@ -3,7 +3,7 @@
   "info": {
     "title": "EventEase API",
     "version": "1.2.0",
-    "description": "Full-stack event management API with JWT access control, transactional bookings, FIFO waitlists, QR ticket check-in, email notifications, and admin analytics."
+    "description": "Backend-only event management REST API with JWT access control, transactional bookings, FIFO waitlists, QR ticket check-in, email notifications, and Admin analytics."
   },
   "servers": [
     {
