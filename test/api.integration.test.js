@@ -69,6 +69,23 @@ integrationTest(
       await mongoose.disconnect();
     });
 
+    await t.test('serves the attendee dashboard and static OpenAPI documentation', async () => {
+      const home = await fetch(baseUrl);
+      assert.equal(home.status, 200);
+      assert.match(home.headers.get('content-type') || '', /text\/html/);
+      assert.match(await home.text(), /EventEase/);
+
+      const docs = await fetch(`${baseUrl}/docs.html`);
+      assert.equal(docs.status, 200);
+      assert.match(await docs.text(), /Swagger UI/);
+
+      const openapi = await fetch(`${baseUrl}/openapi.json`);
+      assert.equal(openapi.status, 200);
+      const spec = await openapi.json();
+      assert.equal(spec.openapi, '3.0.3');
+      assert.ok(spec.paths['/api/registrations/waitlist']);
+    });
+
     const adminEmail = 'integration.admin@example.com';
     const adminPassword = 'AdminPass123!';
     const userEmail = 'integration.user@example.com';
