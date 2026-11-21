@@ -20,6 +20,9 @@ jobs:
 
     env:
       MONGO_TEST_URI: mongodb://localhost:27017/eventease_test?replicaSet=rs0
+      JWT_SECRET: eventease-ci-only-secret-for-automated-tests-2026
+      JWT_EXPIRES_IN: 1h
+      NODE_ENV: test
 
     steps:
       - name: Check out repository
