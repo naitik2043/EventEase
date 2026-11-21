@@ -7,6 +7,7 @@ import { getEventAnalytics } from '../controllers/analyticsController.js';
 import {
   createEvent,
   getUpcomingEvents,
+  getAllEventsForAdmin,
   getEventById,
   updateEvent,
   deleteEvent
@@ -35,6 +36,11 @@ const updateEventValidation = [
   body('availableSeats').not().exists().withMessage('availableSeats is calculated by the server and cannot be edited directly.'),
   body('createdBy').not().exists().withMessage('createdBy is assigned by the server.')
 ];
+
+router.get('/admin/all', protect, restrictToAdmin, [
+  query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer.'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('limit must be between 1 and 100.')
+], validateRequest, getAllEventsForAdmin);
 
 router.get('/', [
   query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer.'),
