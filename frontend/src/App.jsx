@@ -892,7 +892,9 @@ export default function App() {
           <button className="button button-dark button-full" style={{ marginTop: 16 }} onClick={() => setModal(null)}>Done</button>
         </ModalFrame>
       )}
-      {toast && <div className={'toast ' + (toast.type === 'error' ? 'toast-error' : '')}>{toast.message}</div>}
+      <div className="toast-region" aria-live="polite" aria-atomic="true">
+        {toast && <div className={'toast ' + (toast.type === 'error' ? 'toast-error' : '')}>{toast.message}</div>}
+      </div>
     </div>
   );
 }
