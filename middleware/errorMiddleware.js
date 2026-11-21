@@ -1,10 +1,13 @@
 import AppError from '../utils/AppError.js';
+import { log } from '../utils/logger.js';
 
-export function notFound(req, res, next) {
-  next(new AppError(`Route not found: ${req.method} ${req.originalUrl}`, 404));
+export function notFound(req, _res, next) {
+  next(new AppError(`Route not found: ${req.method} ${req.path}`, 404));
 }
 
 export function errorHandler(err, req, res, next) {
+  if (res.headersSent) return next(err);
+
   let error = err;
 
   if (error.name === 'CastError') {
@@ -22,11 +25,24 @@ export function errorHandler(err, req, res, next) {
   }
 
   const statusCode = error.statusCode || 500;
+
+  if (statusCode >= 500) {
+    log('error', 'request_failed', {
+      requestId: req.requestId,
+      method: req.method,
+      path: req.path,
+      statusCode,
+      message: err.message,
+      stack: process.env.NODE_ENV === 'production' ? undefined : err.stack
+    });
+  }
+
   const response = {
     success: false,
     message: statusCode === 500 && process.env.NODE_ENV === 'production'
       ? 'Something went wrong on the server.'
-      : error.message || 'Internal server error.'
+      : error.message || 'Internal server error.',
+    requestId: req.requestId
   };
 
   if (error.details) response.errors = error.details;
