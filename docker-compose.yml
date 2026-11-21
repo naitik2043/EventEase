@@ -8,17 +8,33 @@ services:
       - "27017:27017"
     volumes:
       - eventease-mongo-data:/data/db
-      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/01-replica-set.js:ro
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          "mongosh --quiet --eval \"try { quit(db.hello().isWritablePrimary ? 0 : 1) } catch (error) { quit(1) }\""
+          "CMD",
+          "mongosh",
+          "--quiet",
+          "--eval",
+          "db.adminCommand({ ping: 1 }).ok"
         ]
       interval: 5s
       timeout: 5s
       retries: 30
       start_period: 15s
+
+  mongo-init:
+    image: mongo:7.0
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./docker/mongo-init.js:/scripts/mongo-init.js:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command: >
+      "mongosh mongodb://mongo:27017/admin --quiet --file /scripts/mongo-init.js &&
+      until mongosh mongodb://mongo:27017/admin --quiet --eval 'db.hello().isWritablePrimary' | grep -q true;
+      do sleep 1; done"
+    restart: "no"
 
   api:
     build:
@@ -35,8 +51,8 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      mongo:
-        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
