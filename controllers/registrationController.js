@@ -159,6 +159,9 @@ export const cancelRegistration = asyncHandler(async (req, res) => {
       if (existing.registrationStatus === 'Cancelled') {
         throw new AppError('This registration has already been cancelled.', 409);
       }
+      if (existing.checkedInAt) {
+        throw new AppError('A checked-in ticket cannot be cancelled.', 409);
+      }
 
       const cancelled = await Registration.findOneAndUpdate(
         {
@@ -363,6 +366,33 @@ export const getEventWaitlist = asyncHandler(async (req, res) => {
     event,
     results: entries.length,
     waitlist: entries
+  });
+});
+
+export const cancelWaitlistEntry = asyncHandler(async (req, res) => {
+  const entry = await Waitlist.findOneAndUpdate(
+    {
+      _id: req.params.id,
+      userId: req.user._id,
+      status: 'Waiting'
+    },
+    { $set: { status: 'Cancelled' } },
+    { new: true }
+  );
+
+  if (!entry) {
+    const existing = await Waitlist.findOne({
+      _id: req.params.id,
+      userId: req.user._id
+    });
+    if (!existing) throw new AppError('Waitlist entry not found.', 404);
+    throw new AppError('Only a waiting entry can be cancelled.', 409);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'You have left the event waitlist.',
+    waitlistEntry: entry
   });
 });
 
