@@ -3,7 +3,6 @@
 EventEase is an Express REST API service. It does not ship a browser frontend or a frontend build.
 
 ## Production requirements
-
 - Node.js 22.12+ or Node.js 24.
 - A managed MongoDB replica set or supported sharded cluster; booking and waitlist operations use transactions.
 - A unique, high-entropy JWT_SECRET with at least 32 characters.
@@ -24,7 +23,6 @@ docker compose exec api npm run seed:admin
 ```
 
 API endpoints:
-
 - Health: http://localhost:5000/api/health
 - Swagger UI: http://localhost:5000/api-docs
 - OpenAPI JSON: http://localhost:5000/api-docs/openapi.json
@@ -77,10 +75,9 @@ Run it once from a trusted terminal with MONGO_URI and ADMIN_* variables set.
 
 ## Email notifications
 
-Booking confirmation and waitlist promotion emails are optional. Configure RESEND_API_KEY and MAIL_FROM only after verifying the sender/domain in Resend. Delivery is best-effort and does not change booking state if the provider is unavailable.
+Booking confirmations and waitlist promotion emails are optional. Configure RESEND_API_KEY and MAIL_FROM only after verifying the sender/domain in Resend. Delivery is best-effort and does not change booking state if the provider is unavailable.
 
 ## Production checklist
-
 - Use a managed MongoDB replica set with backups and tested restore procedures.
 - Restrict Atlas network access to the backend host's egress IPs where possible.
 - Use a unique JWT secret and explicit CORS allowlist.
