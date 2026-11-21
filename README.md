@@ -256,3 +256,31 @@ The PDF assessment asks for screenshots covering registration/login, Admin event
 ## 11. Assessment note
 
 This project provides the backend source and API setup. You still need to run it with your own MongoDB instance, verify the endpoints, and capture your own API-testing screenshots. Those screenshots cannot be pre-generated because they must come from your running application.
+
+## 12. Security and configuration
+
+- Keep secrets in a local `.env` file; commit only the redacted `.env.example`.
+- Use a strong, unique `JWT_SECRET` for every deployed environment.
+- Do not use the example Admin password in a real environment.
+- Set `NODE_ENV=production` in production so internal error details are not returned to clients.
+- Configure `CORS_ORIGIN` to the exact frontend origin(s) before deployment; the permissive default is intended for local practical work.
+- Use HTTPS in production and keep Node.js and dependencies updated.
+
+## 13. Current scope and limitations
+
+- This repository contains the backend/API; it does not include a separate React or other web frontend.
+- The API uses a MongoDB connection configured through `MONGO_URI`.
+- Booking capacity is reserved with an atomic conditional update. The registration record and seat update are coordinated with compensating cleanup, not a multi-document MongoDB transaction.
+- The Postman collection is a starter test workflow. Run the requests against your local database and replace sample data where needed.
+
+## 14. Roadmap
+
+- Add automated integration tests for authentication, role permissions, booking concurrency, and cancellation.
+- Add CI checks for linting and tests on pull requests.
+- Add structured request logging and production monitoring.
+- Add API versioning and generated OpenAPI documentation.
+- Add a frontend client when the UI is developed.
+
+## 15. License
+
+No open-source license is currently declared for this repository. Unless a license is added, the source remains under the default copyright terms.
