@@ -116,7 +116,11 @@ EventEase/
 │   ├── eventController.js
 │   └── registrationController.js
 ├── Result/
-│   └── API verification screenshots/
+│   ├── GET HEALT.png
+│   ├── MONGODB.png
+│   ├── POST-Admin_Create_Event.png
+│   ├── POST-USer login .png
+│   └── User-register.png
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── API_TESTING.md
