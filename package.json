@@ -2,7 +2,7 @@
   "name": "eventease-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "REST API for EventEase event registration and management",
+  "description": "Role-based REST API for event management and attendee registration, built with Node.js, Express, MongoDB and Mongoose",
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -28,10 +28,24 @@
   "devDependencies": {
     "nodemon": "^3.1.14"
   },
-  "directories": {
-    "doc": "docs"
+  "author": "Naitik Gupta",
+  "keywords": [
+    "event-management",
+    "event-registration",
+    "nodejs",
+    "express",
+    "mongodb",
+    "mongoose",
+    "rest-api",
+    "jwt",
+    "backend"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/naitik2043/EventEase.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "bugs": {
+    "url": "https://github.com/naitik2043/EventEase/issues"
+  },
+  "homepage": "https://github.com/naitik2043/EventEase#readme"
 }
