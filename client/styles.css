@@ -276,3 +276,19 @@ td small { display: block; color: #a0a8b5; margin-top: 4px; font-size: 8px; }
   .modal-card { padding: 25px 19px; }
   .ticket-detail-grid { gap: 4px; }
 }
+
+
+/* Admin event operations and detailed metric dialogs */
+.row-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.event-admin-table td { vertical-align: middle; }
+.event-admin-table td small { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.edit-event-modal { width: min(650px, 100%); max-height: min(92vh, 850px); overflow-y: auto; }
+.edit-event-modal .modal-actions { display: flex; justify-content: end; flex-direction: row; }
+.event-analytics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 20px 0; }
+.event-analytics-grid .metric-card { padding: 13px; }
+.event-analytics-grid .metric-card > strong { font-size: 21px; }
+@media (max-width: 690px) {
+  .row-actions { gap: 5px; }
+  .row-actions .button { padding: 0 8px; font-size: 9px; }
+  .event-analytics-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
